@@ -45,12 +45,13 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UAnimSequence* AnimSequence;
 
-	
+	//站立待机
 	FString Idle = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonIdle.ThirdPersonIdle'");
+	//跑步
 	FString Jog = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonRun.ThirdPersonRun'");
+	//跳跃
 	FString JumpAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Start.ThirdPersonJump_Start'");
 	FString JumpLoopAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Loop.ThirdPersonJump_Loop'");
-	FString StopJumpingAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_End.ThirdPersonJump_End'");
 	
 	void AnimPlay(FString Value, bool loop = false);
 	FString GetPlayingAnimName();

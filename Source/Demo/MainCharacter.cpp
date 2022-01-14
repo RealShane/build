@@ -57,6 +57,7 @@ void AMainCharacter::BeginPlay()
 	Super::BeginPlay();
 	this -> AnimPlay(Idle, true);
 	SetActorLocation(FVector(12000, 12000, 200));
+	GetCharacterMovement() -> NavAgentProps.bCanCrouch = true;
 }
 
 // Called every frame

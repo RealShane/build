@@ -27,12 +27,15 @@ public:
 	virtual void SetupInputComponent() override;
 
 	void Construct();
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsJumpCouldPlay = true;
 	
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsJogCouldPlay = true;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsIdleCouldPlay = false;
+	bool IsIdleCouldPlay = true;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	float ForwardValue;
@@ -41,7 +44,7 @@ public:
 	float RightValue;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsJump = false;
+	AMainCharacter* Main;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBuildSystem* BuildSystem;

@@ -18,7 +18,8 @@ void APersonController::Construct()
 void APersonController::BeginPlay()
 {
 	Super::BeginPlay();
-	BuildSystem -> SetPlayer(Cast<AMainCharacter>(GetCharacter()));
+	Main = Cast<AMainCharacter>(GetCharacter());
+	BuildSystem -> SetPlayer(Main);
 }
 
 void APersonController::Tick(float DeltaTime)
@@ -48,7 +49,7 @@ void APersonController::MoveForward(float Value)
 		const FRotator Rotation = GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		GetCharacter() -> AddMovementInput(Direction, Value);
+		Main -> AddMovementInput(Direction, Value);
 	}
 }
 
@@ -59,24 +60,23 @@ void APersonController::MoveRight(float Value)
 		const FRotator Rotation = GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		GetCharacter() -> AddMovementInput(Direction, Value);
+		Main -> AddMovementInput(Direction, Value);
 	}
 }
 
 void APersonController::Jump()
 {
-	IsJump = !IsJump;
-	Cast<AMainCharacter>(GetCharacter()) -> Jump();
-	Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> JumpAnim);
-	Lib::echo(TEXT("这是Jump的IsJump ： " + FString::SanitizeFloat(IsJump)));
+	bool IsFalling = Main -> GetCharacterMovement() -> IsFalling();
+	//防止在空中继续按空格重复播放
+	if (!IsFalling) {
+		Main -> AnimPlay(Main -> JumpAnim);
+	}
+	Main -> Jump();
 }
 
 void APersonController::StopJumping()
 {
-	IsJump = !IsJump;
-	Cast<AMainCharacter>(GetCharacter()) -> StopJumping();
-	Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> StopJumpingAnim);
-	Lib::echo(TEXT("这是StopJumping的IsJump ： " + FString::SanitizeFloat(IsJump)));
+	Main -> StopJumping();
 }
 
 void APersonController::PressOne()
@@ -92,17 +92,41 @@ void APersonController::MouseLeft()
 
 void APersonController::MoveAnimSwitch()
 {
-	if (ForwardValue != 0 || RightValue != 0) {
-		if (IsJogCouldPlay) {
+	bool IsFalling = Main -> GetCharacterMovement() -> IsFalling();
+	bool IsCrouching = Main -> GetCharacterMovement() -> IsCrouching();
+	bool IsPlaying = Main -> GetMesh() -> IsPlaying();
+	bool IsJumpStart = Main -> GetPlayingAnimName() == Main -> JumpAnim;
+	if (IsFalling && IsJumpCouldPlay) {
+		//切换下落动画
+		IsJumpCouldPlay = false;
+		IsJogCouldPlay = true;
+		IsIdleCouldPlay = true;
+		if (IsJumpStart && !IsPlaying) {
+			Main -> AnimPlay(Main -> JumpLoopAnim);
+		}
+	}else if (ForwardValue != 0 || RightValue != 0) {
+		//切换跑步动画
+		if (IsJogCouldPlay && !IsFalling) {
+			IsJumpCouldPlay = true;
 			IsJogCouldPlay = false;
 			IsIdleCouldPlay = true;
-			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> Jog, true);
+			if (IsCrouching) {
+
+			}else {
+				Main -> AnimPlay(Main -> Jog, true);
+			}
 		}
 	}else {
-		if (IsIdleCouldPlay) {
+		//切换待机动画
+		if (IsIdleCouldPlay && !IsFalling) {
+			IsJumpCouldPlay = true;
 			IsJogCouldPlay = true;
 			IsIdleCouldPlay = false;
-			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> Idle, true);
+			if (IsCrouching) {
+
+			}else {
+				Main -> AnimPlay(Main -> Idle, true);
+			}
 		}
 	}
 }
