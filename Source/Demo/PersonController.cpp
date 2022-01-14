@@ -24,6 +24,7 @@ void APersonController::BeginPlay()
 void APersonController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	this -> MoveAnimSwitch();
 }
 
 void APersonController::SetupInputComponent()
@@ -31,6 +32,8 @@ void APersonController::SetupInputComponent()
 	Super::SetupInputComponent();
 	InputComponent -> BindAxis("MoveForward", this, &APersonController::MoveForward);
 	InputComponent -> BindAxis("MoveRight", this, &APersonController::MoveRight);
+	InputComponent -> BindAction("Jump", IE_Pressed, this, &APersonController::Jump);
+	InputComponent -> BindAction("Jump", IE_Released, this, &APersonController::StopJumping);
 
 	//数字1按键
 	InputComponent -> BindAction("One", IE_Pressed, this, &APersonController::PressOne);
@@ -40,37 +43,40 @@ void APersonController::SetupInputComponent()
 
 void APersonController::MoveForward(float Value)
 {
+	ForwardValue = Value;
 	if (Value != 0){
 		const FRotator Rotation = GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		GetCharacter() -> AddMovementInput(Direction, Value);
-		if (IsMovingCouldPlay) {
-			IsMovingCouldPlay = false;
-			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> Jog, true);
-		}else {
-			IsIdleCouldPlay = true;
-		}
-	}else {
-		IsMovingCouldPlay = true;
-		if (IsIdleCouldPlay) {
-			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> JogStop);
-			IsIdleCouldPlay = false;
-		}
-		if (!Cast<AMainCharacter>(GetCharacter()) -> GetMesh() -> IsPlaying()) {
-			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> Idle);
-		}
 	}
 }
 
 void APersonController::MoveRight(float Value)
 {
+	RightValue = Value;
 	if (Value != 0){
 		const FRotator Rotation = GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		GetCharacter() -> AddMovementInput(Direction, Value);
 	}
+}
+
+void APersonController::Jump()
+{
+	IsJump = !IsJump;
+	Cast<AMainCharacter>(GetCharacter()) -> Jump();
+	Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> JumpAnim);
+	Lib::echo(TEXT("这是Jump的IsJump ： " + FString::SanitizeFloat(IsJump)));
+}
+
+void APersonController::StopJumping()
+{
+	IsJump = !IsJump;
+	Cast<AMainCharacter>(GetCharacter()) -> StopJumping();
+	Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> StopJumpingAnim);
+	Lib::echo(TEXT("这是StopJumping的IsJump ： " + FString::SanitizeFloat(IsJump)));
 }
 
 void APersonController::PressOne()
@@ -83,3 +89,20 @@ void APersonController::MouseLeft()
 	BuildSystem -> Building();
 }
 
+
+void APersonController::MoveAnimSwitch()
+{
+	if (ForwardValue != 0 || RightValue != 0) {
+		if (IsJogCouldPlay) {
+			IsJogCouldPlay = false;
+			IsIdleCouldPlay = true;
+			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> Jog, true);
+		}
+	}else {
+		if (IsIdleCouldPlay) {
+			IsJogCouldPlay = true;
+			IsIdleCouldPlay = false;
+			Cast<AMainCharacter>(GetCharacter()) -> AnimPlay(Cast<AMainCharacter>(GetCharacter()) -> Idle, true);
+		}
+	}
+}

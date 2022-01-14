@@ -3,6 +3,8 @@
 
 #include "MainCharacter.h"
 
+#include "Lib.h"
+
 // Sets default values
 AMainCharacter::AMainCharacter()
 {
@@ -20,7 +22,7 @@ void AMainCharacter::Construct()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
-	SkeletalMesh = LoadObject<USkeletalMesh>(NULL, TEXT("SkeletalMesh'/Game/ParagonSunWukong/Characters/Heroes/Wukong/Meshes/Wukong.Wukong'"));
+	SkeletalMesh = LoadObject<USkeletalMesh>(NULL, TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin_Female.SK_Mannequin_Female'"));
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	GetCharacterMovement() -> bOrientRotationToMovement = true;
@@ -69,8 +71,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	PlayerInputComponent -> BindAxis("LookRight", this, &AMainCharacter::AddControllerYawInput);
 	PlayerInputComponent -> BindAxis("LookForward", this, &AMainCharacter::AddControllerPitchInput);
-	PlayerInputComponent -> BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
-	PlayerInputComponent -> BindAction("Jump", IE_Released, this, &AMainCharacter::StopJumping);
+	
 }
 
 void AMainCharacter::AnimPlay(FString Value, bool loop)
@@ -79,4 +80,9 @@ void AMainCharacter::AnimPlay(FString Value, bool loop)
 	GetMesh() -> SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	GetMesh() -> SetAnimation(AnimSequence);
 	GetMesh() -> Play(loop);
+}
+
+FString AMainCharacter::GetPlayingAnimName()
+{
+	return AnimSequence -> GetPathName();
 }

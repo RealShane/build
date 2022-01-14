@@ -29,10 +29,19 @@ public:
 	void Construct();
 	
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsMovingCouldPlay = true;
+	bool IsJogCouldPlay = true;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsIdleCouldPlay = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float ForwardValue;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float RightValue;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsJump = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBuildSystem* BuildSystem;
@@ -42,6 +51,8 @@ protected:
 	void MoveRight(float Value);
 	void PressOne();
 	void MouseLeft();
-	
+	void Jump();
+	void StopJumping();
+	void MoveAnimSwitch();
 	
 };

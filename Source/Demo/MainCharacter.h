@@ -46,12 +46,14 @@ public:
 	UAnimSequence* AnimSequence;
 
 	
-	FString Idle = TEXT("AnimSequence'/Game/ParagonSunWukong/Characters/Heroes/Wukong/Animations/Idle.Idle'");
-	FString Jog = TEXT("AnimSequence'/Game/ParagonSunWukong/Characters/Heroes/Wukong/Animations/Jog_Bwd.Jog_Bwd'");
-	FString JogStop = TEXT("AnimSequence'/Game/ParagonSunWukong/Characters/Heroes/Wukong/Animations/Jog_Bwd_Stop.Jog_Bwd_Stop'");
+	FString Idle = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonIdle.ThirdPersonIdle'");
+	FString Jog = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonRun.ThirdPersonRun'");
+	FString JumpAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Start.ThirdPersonJump_Start'");
+	FString JumpLoopAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Loop.ThirdPersonJump_Loop'");
+	FString StopJumpingAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_End.ThirdPersonJump_End'");
 	
 	void AnimPlay(FString Value, bool loop = false);
-
+	FString GetPlayingAnimName();
 
 private:
 	void Construct();
