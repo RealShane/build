@@ -71,7 +71,6 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	PlayerInputComponent -> BindAxis("LookRight", this, &AMainCharacter::AddControllerYawInput);
 	PlayerInputComponent -> BindAxis("LookForward", this, &AMainCharacter::AddControllerPitchInput);
-	
 }
 
 void AMainCharacter::AnimPlay(FString Value, bool loop)
