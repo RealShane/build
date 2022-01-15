@@ -29,6 +29,9 @@ public:
 	void Construct();
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsThirdView = true;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsJumpCouldPlay = true;
 	
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -49,11 +52,17 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBuildSystem* BuildSystem;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsBuildMode = false;
+
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void PressOne();
 	void MouseLeft();
+	void MouseWheelUp();
+	void MouseWheelDown();
+	void MouseRight();
 	void Jump();
 	void StopJumping();
 	void MoveAnimSwitch();

@@ -12,21 +12,18 @@ AMainCharacter::AMainCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	this -> Construct();
 	this -> CreateModel();
-	this -> CreateCamera();
+	this -> ThirdPerson();
+	// this -> FirstPerson();
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 	
 }
 
 void AMainCharacter::Construct()
 {
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
 	SkeletalMesh = LoadObject<USkeletalMesh>(NULL, TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin_Female.SK_Mannequin_Female'"));
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	GetCharacterMovement() -> bOrientRotationToMovement = true;
-	GetCharacterMovement() -> RotationRate = FRotator(0, 540, 0);
 	GetCharacterMovement() -> JumpZVelocity = 1200;
 	GetCharacterMovement() -> AirControl = 1;
 	GetCharacterMovement() -> GravityScale = 20;
@@ -34,21 +31,10 @@ void AMainCharacter::Construct()
 
 void AMainCharacter::CreateModel()
 {
-	GetMesh() -> SetSkeletalMesh(SkeletalMesh);
 	GetMesh() -> SetRelativeRotation(FRotator(0, -90, 0));
 	GetMesh() -> SetRelativeLocation(FVector(0, 0, -100));
+	GetMesh() -> SetSkeletalMesh(SkeletalMesh);
 	GetCapsuleComponent() -> InitCapsuleSize(42, 100);
-}
-
-void AMainCharacter::CreateCamera()
-{
-	SpringArmComponent -> SetupAttachment(RootComponent);
-	SpringArmComponent -> SetRelativeLocation(FVector(0, 0, 100));
-	SpringArmComponent -> SetRelativeRotation(FRotator(-15, 0, 0));
-	SpringArmComponent -> TargetArmLength = 600;
-	SpringArmComponent -> bUsePawnControlRotation = true;
-	CameraComponent -> SetupAttachment(SpringArmComponent, USpringArmComponent::SocketName);
-	CameraComponent -> bUsePawnControlRotation = false;
 }
 
 // Called when the game starts or when spawned
@@ -58,6 +44,7 @@ void AMainCharacter::BeginPlay()
 	this -> AnimPlay(Idle, true);
 	SetActorLocation(FVector(12000, 12000, 200));
 	GetCharacterMovement() -> NavAgentProps.bCanCrouch = true;
+	SpringArmComponent -> TargetArmLength = 600;
 }
 
 // Called every frame
@@ -85,4 +72,30 @@ void AMainCharacter::AnimPlay(FString Value, bool loop)
 FString AMainCharacter::GetPlayingAnimName()
 {
 	return AnimSequence -> GetPathName();
+}
+
+void AMainCharacter::FirstPerson()
+{
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = true;
+	bUseControllerRotationRoll = false;
+	CameraComponent -> SetupAttachment(GetMesh());
+	CameraComponent -> SetRelativeLocation(FVector(-2.5, -10, 140));
+	CameraComponent -> SetRelativeRotation(FRotator(0, 90, 0));
+	CameraComponent -> bUsePawnControlRotation = true;
+}
+
+void AMainCharacter::ThirdPerson()
+{
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
+	GetCharacterMovement() -> RotationRate = FRotator(0, 540, 0);
+	SpringArmComponent -> SetupAttachment(RootComponent);
+	SpringArmComponent -> SetRelativeLocation(FVector(0, 0, 100));
+	SpringArmComponent -> SetRelativeRotation(FRotator(-15, 0, 0));
+	SpringArmComponent -> bUsePawnControlRotation = true;
+	CameraComponent -> SetupAttachment(SpringArmComponent);
+	CameraComponent -> SetRelativeLocation(FVector::ZeroVector);
+	CameraComponent -> bUsePawnControlRotation = false;
 }

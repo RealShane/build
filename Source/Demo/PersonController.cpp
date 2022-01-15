@@ -38,8 +38,11 @@ void APersonController::SetupInputComponent()
 
 	//数字1按键
 	InputComponent -> BindAction("One", IE_Pressed, this, &APersonController::PressOne);
-	//鼠标左键
+	//鼠标左右中键
 	InputComponent -> BindAction("MouseLeft", IE_Pressed, this, &APersonController::MouseLeft);
+	InputComponent -> BindAction("MouseWheelUp", IE_Pressed, this, &APersonController::MouseWheelUp);
+	InputComponent -> BindAction("MouseWheelDown", IE_Pressed, this, &APersonController::MouseWheelDown);
+	InputComponent -> BindAction("MouseRight", IE_Pressed, this, &APersonController::MouseRight);
 }
 
 void APersonController::MoveForward(float Value)
@@ -81,12 +84,63 @@ void APersonController::StopJumping()
 
 void APersonController::PressOne()
 {
-	BuildSystem -> SetBlur();
+	if (!IsBuildMode) {
+		BuildSystem -> SetBuild();
+	}else {
+		BuildSystem -> UnSetBuild();
+	}
+	IsBuildMode = !IsBuildMode;
 }
 
 void APersonController::MouseLeft()
 {
-	BuildSystem -> Building();
+	if (IsBuildMode) {
+		if (BuildSystem -> Building()) {
+			IsBuildMode = false;
+		}
+	}
+}
+
+void APersonController::MouseWheelUp()
+{
+	float ArmLength = Main -> SpringArmComponent -> TargetArmLength - 50;
+	if (ArmLength > 600) {
+		ArmLength = 600;
+	}else if (ArmLength < 0) {
+		ArmLength = 0;
+		IsThirdView = false;
+		Main -> FirstPerson();
+	}else {
+		if (!IsThirdView) {
+			Main -> ThirdPerson();
+		}
+	}
+	Main -> SpringArmComponent -> TargetArmLength = ArmLength;
+}
+
+void APersonController::MouseWheelDown()
+{
+	float ArmLength = Main -> SpringArmComponent -> TargetArmLength + 50;
+	if (ArmLength > 600) {
+		ArmLength = 600;
+	}else if (ArmLength < 0) {
+		ArmLength = 0;
+		IsThirdView = false;
+		Main -> FirstPerson();
+	}else {
+		if (!IsThirdView) {
+			Main -> ThirdPerson();
+		}
+	}
+	Main -> SpringArmComponent -> TargetArmLength = ArmLength;
+}
+
+void APersonController::MouseRight()
+{
+	if (IsBuildMode) {
+		IsBuildMode = false;
+		BuildSystem -> UnSetBuild();
+	}
 }
 
 

@@ -63,8 +63,9 @@ public:
 	TArray<FBuildCache> Saving;
 
 	void SetPlayer(AMainCharacter* Value);
-	void SetBlur();
+	void SetBuild();
+	void UnSetBuild();
 	void BlurAttach();
-	void Building();
+	bool Building();
 	bool IsCollision();
 };

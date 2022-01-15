@@ -40,23 +40,25 @@ void UBuildSystem::SetPlayer(AMainCharacter* Value)
 	this -> Player = Value;
 }
 
-void UBuildSystem::Building()
+bool UBuildSystem::Building()
 {
 	if (BuildItem != nullptr) {
-		// for (FBuildCache& Item : Saving){
-		// 	bool b = Cast<AFloor>(BuildItem) -> StaticMeshComponent -> ComponentOverlapMulti()
-		// 	Lib::echo("is bool : " + FString::SanitizeFloat(b));
-		// }
-		Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-		Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
-		FBuildCache Cache;
-		Cache.HealthPoints = 100;
-		Cache.Type = "floor";
-		Cache.Building = BuildItem;
-		Cache.Location = BuildLocation;
-		Saving.Emplace(Cache);
-		BuildItem = nullptr;
+		bool IsBlock = Cast<AFloor>(BuildItem) -> IsBlock;
+		if (IsBlock) {
+			Lib::echo("被阻挡无法放置！");
+		}else {
+			Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
+			Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
+			Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
+			FBuildCache Cache;
+			Cache.HealthPoints = 100;
+			Cache.Type = "floor";
+			Cache.Building = BuildItem;
+			Cache.Location = BuildLocation;
+			Saving.Emplace(Cache);
+			BuildItem = nullptr;
+			return true;
+		}
 	}else {
 		if (!Saving.IsEmpty()) {
 			for (FBuildCache& Item : Saving){
@@ -65,21 +67,33 @@ void UBuildSystem::Building()
 			}
 		}
 	}
+	return false;
 }
 
-void UBuildSystem::SetBlur()
+/**
+ * 显示虚影
+ */
+void UBuildSystem::SetBuild()
 {
 	if (BuildItem == nullptr) {
-		BuildItem = GetWorld() -> SpawnActor<AFloor>(Player -> GetActorLocation(), FRotator(0));
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::NoCollision);
-	}else {
+		BuildItem = GetWorld() -> SpawnActor<AFloor>(FVector(0, 0, -10000), FRotator(0));
+		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
+	}
+}
+
+/**
+ * 取消虚影
+ */
+void UBuildSystem::UnSetBuild()
+{
+	if (BuildItem != nullptr) {
 		GetWorld() -> DestroyActor(Cast<AFloor>(BuildItem));
 		BuildItem = nullptr;
 	}
 }
 
 /**
- * 显示虚影
+ * 虚影可移动附着
  */
 void UBuildSystem::BlurAttach()
 {
@@ -89,7 +103,6 @@ void UBuildSystem::BlurAttach()
 		FVector MainLocation = Player -> GetActorLocation();
 		//ρ值有一个变化区间可以使建筑前后移动，这个变化区间值的求出应当使用人物与摄像机的夹角 z*tan
 		float Angle = 90 - (360 - ViewRotation.Pitch);
-		Lib::echo(Angle, false);
 		if (Angle <= 0) {
 			Angle = 89;
 		}
@@ -105,12 +118,8 @@ void UBuildSystem::BlurAttach()
 		float X = FMath::Cos(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		float Y = FMath::Sin(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z - 100) + FVector(X, Y, 0);
-		Lib::echo("x is : " + FString::SanitizeFloat(BuildLocation.X));
-		Lib::echo("y is : " + FString::SanitizeFloat(BuildLocation.Y));
-		Lib::echo("z is : " + FString::SanitizeFloat(BuildLocation.Z));
 		Cast<AFloor>(BuildItem) -> SetActorLocation(BuildLocation);
 		Cast<AFloor>(BuildItem) -> SetActorRotation(FRotator(0, ViewRotation.Yaw, 0));
-		// this -> IsCollision();
 	}
 }
 
@@ -122,13 +131,13 @@ bool UBuildSystem::IsCollision()
 	Start.Y += 50;
 	FVector ForwardVector = Cast<AFloor>(BuildItem) -> GetActorForwardVector();
 	FVector End = ((ForwardVector * 500.f) + Start);
-	FTransform MyTransform = FTransform(FVector(-500, 50, 400));
-	FBox MyBox = FBox(FVector(0, 0, 0), FVector(400, 400, 20));
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 5);
-	DrawDebugSolidBox(GetWorld(), MyBox, FColor::White, MyTransform, true);
+	// FTransform MyTransform = FTransform(FVector(-500, 50, 400));
+	// FBox MyBox = FBox(FVector(0, 0, 0), FVector(400, 400, 20));
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 5);
+	// DrawDebugSolidBox(GetWorld(), MyBox, FColor::White, MyTransform, true);
 	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_WorldStatic)){
 		//获得碰撞到的物体的组件名称并打印
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("The Component Being Hit by Channel is %s"), *OutHit.GetComponent()->GetName()));
+		Lib::echo("The Component Being Hit by Channel is : " + OutHit.GetComponent()->GetName());
 		return true;
 	}
 	return false;

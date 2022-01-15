@@ -56,9 +56,11 @@ public:
 	void AnimPlay(FString Value, bool loop = false);
 	FString GetPlayingAnimName();
 
+	void ThirdPerson();
+	void FirstPerson();
+
 private:
 	void Construct();
 	void CreateModel();
-	void CreateCamera();
 
 };
