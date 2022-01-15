@@ -45,7 +45,7 @@ bool UBuildSystem::Building()
 	if (BuildItem != nullptr) {
 		bool IsBlock = Cast<AFloor>(BuildItem) -> IsBlock;
 		if (IsBlock) {
-			Lib::echo("被阻挡无法放置！");
+			Lib::echo(TEXT("被阻挡无法放置！"));
 		}else {
 			Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
 			Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
