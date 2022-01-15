@@ -71,7 +71,7 @@ void UBuildSystem::SetBlur()
 {
 	if (BuildItem == nullptr) {
 		BuildItem = GetWorld() -> SpawnActor<AFloor>(Player -> GetActorLocation(), FRotator(0));
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
+		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::NoCollision);
 	}else {
 		GetWorld() -> DestroyActor(Cast<AFloor>(BuildItem));
 		BuildItem = nullptr;
@@ -97,9 +97,6 @@ void UBuildSystem::BlurAttach()
 		if (BuildDistance > 1000) {
 			BuildDistance = 1000;
 		}
-		if (BuildDistance < 100) {
-			BuildDistance = 100;
-		}
 		
 		/**
 		 * x = ρcos
@@ -107,7 +104,10 @@ void UBuildSystem::BlurAttach()
 		 */
 		float X = FMath::Cos(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		float Y = FMath::Sin(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
-		BuildLocation = FVector(MainLocation.X, MainLocation.Y, 20) + FVector(X, Y, 0);
+		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z - 100) + FVector(X, Y, 0);
+		Lib::echo("x is : " + FString::SanitizeFloat(BuildLocation.X));
+		Lib::echo("y is : " + FString::SanitizeFloat(BuildLocation.Y));
+		Lib::echo("z is : " + FString::SanitizeFloat(BuildLocation.Z));
 		Cast<AFloor>(BuildItem) -> SetActorLocation(BuildLocation);
 		Cast<AFloor>(BuildItem) -> SetActorRotation(FRotator(0, ViewRotation.Yaw, 0));
 		// this -> IsCollision();

@@ -10,10 +10,10 @@ AFloor::AFloor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Architecture/Floor_400x400.Floor_400x400'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
-	StaticMeshComponent -> SetupAttachment(RootComponent);
 	StaticMeshComponent -> SetStaticMesh(Floor.Object);
+	StaticMeshComponent -> SetRelativeScale3D(FVector(4, 4, 0.2));
 }
 
 // Called when the game starts or when spawned
