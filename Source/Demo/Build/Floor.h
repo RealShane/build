@@ -30,13 +30,13 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* BoxComponent;
 
-	//长宽
+	//半长宽
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float XY = 200;
+	float HalfXY = 200;
 
 	//高
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float Z = 10;
+	float HalfZ = 30;
 
 	//模型与UE世界比例
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")

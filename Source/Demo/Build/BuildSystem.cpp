@@ -44,23 +44,38 @@ bool UBuildSystem::Building()
 {
 	if (BuildItem != nullptr) {
 		bool IsBlock = Cast<AFloor>(BuildItem) -> IsBlock;
-		if (IsBlock) {
+		if (IsBlock && !ForceBuild) {
 			//TODO UI显示被阻挡无法放置
 			Lib::echo(TEXT("被阻挡无法放置！"));
-		}else {
-			Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
-			Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-			Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
-			FBuildCache Cache;
-			Cache.HealthPoints = 100;
-			Cache.Type = "Floor";
-			Cache.Building = BuildItem;
-			Cache.Location = BuildLocation;
-			Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
-			Saving.Emplace(Cache);
-			BuildItem = nullptr;
-			return true;
+			return false;
 		}
+		Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
+		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
+		Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
+		if (ForceBuild) {
+			if (WhichSide == "Right") {
+				Saving[Index].Right = true;
+			}else if (WhichSide == "Low") {
+				Saving[Index].Low = true;
+			}else if (WhichSide == "Left") {
+				Saving[Index].Left = true;
+			}else if (WhichSide == "Up") {
+				Saving[Index].Up = true;
+			}
+			Lib::echo("Right is : " + FString::SanitizeFloat(Saving[Index].Right));
+			Lib::echo("Low is : " + FString::SanitizeFloat(Saving[Index].Low));
+			Lib::echo("Left is : " + FString::SanitizeFloat(Saving[Index].Left));
+			Lib::echo("Up is : " + FString::SanitizeFloat(Saving[Index].Up));
+		}
+		FBuildCache Cache;
+		Cache.HealthPoints = 100;
+		Cache.Type = "Floor";
+		Cache.Building = BuildItem;
+		Cache.Location = BuildLocation;
+		Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
+		Saving.Emplace(Cache);
+		BuildItem = nullptr;
+		return true;
 	}
 	return false;
 }
@@ -106,7 +121,6 @@ void UBuildSystem::BlurAttach()
 		if (BuildDistance > 1000) {
 			BuildDistance = 1000;
 		}
-		
 		/**
 		 * x = ρcos
 		 * y = ρsin
@@ -120,40 +134,63 @@ void UBuildSystem::BlurAttach()
 			if (!Saving.IsEmpty()) {
 				FVector BlockActorLocation = FVector::DownVector;
 				FRotator BlockActorRotation = FRotator::ZeroRotator;
-				for (FBuildCache& Item : Saving){
-					if (BlockActorName == Item.Building -> GetName()) {
-						BlockActorLocation = Item.Location;
-						BlockActorRotation = Item.Rotation;
-						Lib::echo(TEXT("阻挡物的名字：") + Item.Building -> GetName());
+				int i = 0;
+				for(; i < Saving.Num(); i++) {
+					if (BlockActorName == Saving[i].Building -> GetName()) {
+						BlockActorLocation = Saving[i].Location;
+						BlockActorRotation = Saving[i].Rotation;
 						break;
 					}
 				}
-				if (BlockActorLocation != FVector::DownVector) {
-					float CalX = BlockActorLocation.X - BuildLocation.X;
-					float CalY = BlockActorLocation.Y - BuildLocation.Y;
-					float AbsX = FMath::Abs(CalX);
-					float AbsY = FMath::Abs(CalY);
-					float HalfSide = Cast<AFloor>(BuildItem) -> XY * 2;
-					Lib::echo(TEXT("X 是 ： ") + FString::SanitizeFloat(CalX));
-					Lib::echo(TEXT("Y 是 ： ") + FString::SanitizeFloat(CalY));
-					Lib::echo(TEXT("AbsX 是 ： ") + FString::SanitizeFloat(AbsX));
-					Lib::echo(TEXT("AbsY 是 ： ") + FString::SanitizeFloat(AbsY));
-					if ((CalX > 0 && CalY > 0 && AbsX > AbsY) || (CalX > 0 && CalY < 0 && AbsX > AbsY)) {
-						//放右边
-						BuildLocation = BlockActorLocation + FVector(HalfSide, 0, 0);
-						Lib::echo(TEXT("放右边"));
-					}else if ((CalX > 0 && CalY > 0 && AbsX < AbsY) || (CalX < 0 && CalY > 0 && AbsX < AbsY)) {
-						//放上边
-						BuildLocation = BlockActorLocation + FVector(0, HalfSide, 0);
-						Lib::echo(TEXT("放上边"));
-					}else if ((CalX < 0 && CalY > 0 && AbsX > AbsY) || (CalX < 0 && CalY < 0 && AbsX > AbsY)) {
-						//放左边
-						BuildLocation = BlockActorLocation + FVector(-HalfSide, 0, 0);
-						Lib::echo(TEXT("放左边"));
-					}else if ((CalX < 0 && CalY < 0 && AbsX < AbsY) || (CalX > 0 && CalY < 0 && AbsX < AbsY)) {
-						//放下边
-						BuildLocation = BlockActorLocation + FVector(0, -HalfSide, 0);
-						Lib::echo(TEXT("放下边"));
+				Index = i;
+				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+					float Side = Cast<AFloor>(BuildItem) -> HalfXY * 2;
+					float CenterToTop = Cast<AFloor>(BuildItem) -> HalfXY * FMath::Sqrt(2.f);
+					//右上角
+					float RightUpX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 45)) * CenterToTop;
+					float RightUpY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 45)) * CenterToTop;
+					//左上角
+					float LeftUpX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 135)) * CenterToTop;
+					float LeftUpY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 135)) * CenterToTop;
+					//左下角
+					float LeftLowX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 225)) * CenterToTop;
+					float LeftLowY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 225)) * CenterToTop;
+					//右下角
+					float RightLowX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 315)) * CenterToTop;
+					float RightLowY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 315)) * CenterToTop;
+
+					FVector RightSideCenter = BlockActorLocation + FVector((RightUpX - RightLowX) / 2, (RightUpY - RightLowY) / 2, 0);
+					FVector LowSideCenter = BlockActorLocation - FVector((RightLowX - LeftLowX) / 2, (RightLowY - LeftLowY) / 2, 0);
+					FVector LeftSideCenter = BlockActorLocation - FVector((LeftUpX - LeftLowX) / 2, (LeftUpY - LeftLowY) / 2, 0);
+					FVector UpSideCenter = BlockActorLocation + FVector((RightUpX - LeftUpX) / 2, (RightUpY - LeftUpY) / 2, 0);
+					float BuildToRight = FMath::Sqrt(FMath::Square(BuildLocation.X - RightSideCenter.X) + FMath::Square(BuildLocation.Y - RightSideCenter.Y));
+					float BuildToLow = FMath::Sqrt(FMath::Square(BuildLocation.X - LowSideCenter.X) + FMath::Square(BuildLocation.Y - LowSideCenter.Y));
+					float BuildToLeft = FMath::Sqrt(FMath::Square(BuildLocation.X - LeftSideCenter.X) + FMath::Square(BuildLocation.Y - LeftSideCenter.Y));
+					float BuildToUp = FMath::Sqrt(FMath::Square(BuildLocation.X - UpSideCenter.X) + FMath::Square(BuildLocation.Y - UpSideCenter.Y));
+					float Min = FMath::Min(FMath::Min(BuildToRight, BuildToLow), FMath::Min(BuildToLeft, BuildToUp));
+					ForceBuild = true;
+					if (Min == BuildToRight && !Saving[i].Right) {
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						WhichSide = "Right";
+					}else if (Min == BuildToLow && !Saving[i].Low) {
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						WhichSide = "Low";
+					}else if (Min == BuildToLeft && !Saving[i].Left) {
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						WhichSide = "Left";
+					}else if (Min == BuildToUp && !Saving[i].Up) {
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						WhichSide = "Up";
+					}else {
+						ForceBuild = false;
 					}
 					BuildRotation = BlockActorRotation.Yaw;
 				}

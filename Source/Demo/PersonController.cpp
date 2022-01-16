@@ -54,6 +54,11 @@ void APersonController::MoveForward(float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		Main -> AddMovementInput(Direction, Value);
 	}
+	if (ForwardValue || RightValue) {
+		Main -> IsMoving = true;
+	}else {
+		Main -> IsMoving = false;
+	}
 }
 
 void APersonController::MoveRight(float Value)
@@ -64,6 +69,11 @@ void APersonController::MoveRight(float Value)
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		Main -> AddMovementInput(Direction, Value);
+	}
+	if (ForwardValue || RightValue) {
+		Main -> IsMoving = true;
+	}else {
+		Main -> IsMoving = false;
 	}
 }
 

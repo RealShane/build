@@ -30,6 +30,10 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	//是否移动
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsMoving = false;
+
 	//骨骼模型
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	USkeletalMesh* SkeletalMesh;
@@ -54,6 +58,7 @@ public:
 	FString JumpLoopAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Loop.ThirdPersonJump_Loop'");
 	
 	void AnimPlay(FString Value, bool loop = false);
+	
 	FString GetPlayingAnimName();
 
 	void ThirdPerson();

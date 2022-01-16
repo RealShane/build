@@ -31,6 +31,18 @@ struct FBuildCache
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FRotator Rotation;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Right = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Low = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Left = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Up = false;
+	
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -64,6 +76,15 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TArray<FBuildCache> Saving;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool ForceBuild = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	int Index;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString WhichSide;
 
 	void SetPlayer(AMainCharacter* Value);
 	void SetBuild();
