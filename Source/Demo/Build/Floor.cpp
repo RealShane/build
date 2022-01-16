@@ -11,14 +11,14 @@ AFloor::AFloor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent -> InitBoxExtent(FVector(200, 200, 10));
+	BoxComponent -> InitBoxExtent(FVector(XY, XY, Z));
 	SetRootComponent(BoxComponent);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent -> SetupAttachment(RootComponent);
 	StaticMeshComponent -> SetStaticMesh(Floor.Object);
-	StaticMeshComponent -> SetRelativeScale3D(FVector(4, 4, 0.2));
-	StaticMeshComponent -> SetRelativeLocation(FVector(0, 0, -10));
+	StaticMeshComponent -> SetRelativeScale3D(FVector(XY / XYZScale, XY / XYZScale, Z / XYZScale));
+	StaticMeshComponent -> SetRelativeLocation(FVector(0, 0, -Z));
 }
 
 // Called when the game starts or when spawned
@@ -54,12 +54,12 @@ void AFloor::SetMaterial(FString Value)
 
 void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	Lib::echo(TEXT("开始被阻挡的人 : ") + OtherActor -> GetName());
-	IsBlock = !IsBlock;
+	BlockActorName = OtherActor -> GetName();
+	IsBlock = true;
 }
  
 void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	Lib::echo(TEXT("结束被阻挡的人 : ") + OtherActor -> GetName());
-	IsBlock = !IsBlock;
+	BlockActorName = nullptr;
+	IsBlock = false;
 }

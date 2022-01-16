@@ -45,6 +45,7 @@ bool UBuildSystem::Building()
 	if (BuildItem != nullptr) {
 		bool IsBlock = Cast<AFloor>(BuildItem) -> IsBlock;
 		if (IsBlock) {
+			//TODO UI显示被阻挡无法放置
 			Lib::echo(TEXT("被阻挡无法放置！"));
 		}else {
 			Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
@@ -52,19 +53,13 @@ bool UBuildSystem::Building()
 			Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
 			FBuildCache Cache;
 			Cache.HealthPoints = 100;
-			Cache.Type = "floor";
+			Cache.Type = "Floor";
 			Cache.Building = BuildItem;
 			Cache.Location = BuildLocation;
+			Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
 			Saving.Emplace(Cache);
 			BuildItem = nullptr;
 			return true;
-		}
-	}else {
-		if (!Saving.IsEmpty()) {
-			for (FBuildCache& Item : Saving){
-				Lib::echo(Item.Type + " - " + FString::FromInt(Item.Building -> GetUniqueID()) + " - ");
-				Lib::echo(Item.Location.ToString());
-			}
 		}
 	}
 	return false;
@@ -101,6 +96,7 @@ void UBuildSystem::BlurAttach()
 		//视角旋转的Yaw值是极坐标ρ
 		FRotator ViewRotation = Player -> GetController() -> GetControlRotation();
 		FVector MainLocation = Player -> GetActorLocation();
+		float BuildRotation = ViewRotation.Yaw;
 		//ρ值有一个变化区间可以使建筑前后移动，这个变化区间值的求出应当使用人物与摄像机的夹角 z*tan
 		float Angle = 90 - (360 - ViewRotation.Pitch);
 		if (Angle <= 0) {
@@ -118,8 +114,53 @@ void UBuildSystem::BlurAttach()
 		float X = FMath::Cos(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		float Y = FMath::Sin(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z - 100) + FVector(X, Y, 0);
+		// 检测阻挡建筑是否可以附着
+		FString BlockActorName = Cast<AFloor>(BuildItem) -> BlockActorName;
+		if (!BlockActorName.IsEmpty()) {
+			if (!Saving.IsEmpty()) {
+				FVector BlockActorLocation = FVector::DownVector;
+				FRotator BlockActorRotation = FRotator::ZeroRotator;
+				for (FBuildCache& Item : Saving){
+					if (BlockActorName == Item.Building -> GetName()) {
+						BlockActorLocation = Item.Location;
+						BlockActorRotation = Item.Rotation;
+						Lib::echo(TEXT("阻挡物的名字：") + Item.Building -> GetName());
+						break;
+					}
+				}
+				if (BlockActorLocation != FVector::DownVector) {
+					float CalX = BlockActorLocation.X - BuildLocation.X;
+					float CalY = BlockActorLocation.Y - BuildLocation.Y;
+					float AbsX = FMath::Abs(CalX);
+					float AbsY = FMath::Abs(CalY);
+					float HalfSide = Cast<AFloor>(BuildItem) -> XY * 2;
+					Lib::echo(TEXT("X 是 ： ") + FString::SanitizeFloat(CalX));
+					Lib::echo(TEXT("Y 是 ： ") + FString::SanitizeFloat(CalY));
+					Lib::echo(TEXT("AbsX 是 ： ") + FString::SanitizeFloat(AbsX));
+					Lib::echo(TEXT("AbsY 是 ： ") + FString::SanitizeFloat(AbsY));
+					if ((CalX > 0 && CalY > 0 && AbsX > AbsY) || (CalX > 0 && CalY < 0 && AbsX > AbsY)) {
+						//放右边
+						BuildLocation = BlockActorLocation + FVector(HalfSide, 0, 0);
+						Lib::echo(TEXT("放右边"));
+					}else if ((CalX > 0 && CalY > 0 && AbsX < AbsY) || (CalX < 0 && CalY > 0 && AbsX < AbsY)) {
+						//放上边
+						BuildLocation = BlockActorLocation + FVector(0, HalfSide, 0);
+						Lib::echo(TEXT("放上边"));
+					}else if ((CalX < 0 && CalY > 0 && AbsX > AbsY) || (CalX < 0 && CalY < 0 && AbsX > AbsY)) {
+						//放左边
+						BuildLocation = BlockActorLocation + FVector(-HalfSide, 0, 0);
+						Lib::echo(TEXT("放左边"));
+					}else if ((CalX < 0 && CalY < 0 && AbsX < AbsY) || (CalX > 0 && CalY < 0 && AbsX < AbsY)) {
+						//放下边
+						BuildLocation = BlockActorLocation + FVector(0, -HalfSide, 0);
+						Lib::echo(TEXT("放下边"));
+					}
+					BuildRotation = BlockActorRotation.Yaw;
+				}
+			}
+		}
 		Cast<AFloor>(BuildItem) -> SetActorLocation(BuildLocation);
-		Cast<AFloor>(BuildItem) -> SetActorRotation(FRotator(0, ViewRotation.Yaw, 0));
+		Cast<AFloor>(BuildItem) -> SetActorRotation(FRotator(0, BuildRotation, 0));
 	}
 }
 
