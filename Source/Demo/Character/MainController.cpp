@@ -1,51 +1,51 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "PersonController.h"
-#include "Lib.h"
+#include "MainController.h"
+#include "Demo/Lib/Lib.h"
 
-APersonController::APersonController()
+AMainController::AMainController()
 {
 	this -> Construct();
 }
 
-void APersonController::Construct()
+void AMainController::Construct()
 {
 	InputComponent = CreateDefaultSubobject<UInputComponent>(TEXT("InputComponent"));
 	BuildSystem = CreateDefaultSubobject<UBuildSystem>(TEXT("BuildSystem"));
 }
 
-void APersonController::BeginPlay()
+void AMainController::BeginPlay()
 {
 	Super::BeginPlay();
 	Main = Cast<AMainCharacter>(GetCharacter());
 	BuildSystem -> SetPlayer(Main);
 }
 
-void APersonController::Tick(float DeltaTime)
+void AMainController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	this -> MoveAnimSwitch();
 }
 
-void APersonController::SetupInputComponent()
+void AMainController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	InputComponent -> BindAxis("MoveForward", this, &APersonController::MoveForward);
-	InputComponent -> BindAxis("MoveRight", this, &APersonController::MoveRight);
-	InputComponent -> BindAction("Jump", IE_Pressed, this, &APersonController::Jump);
-	InputComponent -> BindAction("Jump", IE_Released, this, &APersonController::StopJumping);
+	InputComponent -> BindAxis("MoveForward", this, &AMainController::MoveForward);
+	InputComponent -> BindAxis("MoveRight", this, &AMainController::MoveRight);
+	InputComponent -> BindAction("Jump", IE_Pressed, this, &AMainController::Jump);
+	InputComponent -> BindAction("Jump", IE_Released, this, &AMainController::StopJumping);
 
 	//数字1按键
-	InputComponent -> BindAction("One", IE_Pressed, this, &APersonController::PressOne);
+	InputComponent -> BindAction("One", IE_Pressed, this, &AMainController::PressOne);
 	//鼠标左右中键
-	InputComponent -> BindAction("MouseLeft", IE_Pressed, this, &APersonController::MouseLeft);
-	InputComponent -> BindAction("MouseWheelUp", IE_Pressed, this, &APersonController::MouseWheelUp);
-	InputComponent -> BindAction("MouseWheelDown", IE_Pressed, this, &APersonController::MouseWheelDown);
-	InputComponent -> BindAction("MouseRight", IE_Pressed, this, &APersonController::MouseRight);
+	InputComponent -> BindAction("MouseLeft", IE_Pressed, this, &AMainController::MouseLeft);
+	InputComponent -> BindAction("MouseWheelUp", IE_Pressed, this, &AMainController::MouseWheelUp);
+	InputComponent -> BindAction("MouseWheelDown", IE_Pressed, this, &AMainController::MouseWheelDown);
+	InputComponent -> BindAction("MouseRight", IE_Pressed, this, &AMainController::MouseRight);
 }
 
-void APersonController::MoveForward(float Value)
+void AMainController::MoveForward(float Value)
 {
 	ForwardValue = Value;
 	if (Value != 0){
@@ -61,7 +61,7 @@ void APersonController::MoveForward(float Value)
 	}
 }
 
-void APersonController::MoveRight(float Value)
+void AMainController::MoveRight(float Value)
 {
 	RightValue = Value;
 	if (Value != 0){
@@ -77,7 +77,7 @@ void APersonController::MoveRight(float Value)
 	}
 }
 
-void APersonController::Jump()
+void AMainController::Jump()
 {
 	bool IsFalling = Main -> GetCharacterMovement() -> IsFalling();
 	//防止在空中继续按空格重复播放
@@ -87,12 +87,12 @@ void APersonController::Jump()
 	Main -> Jump();
 }
 
-void APersonController::StopJumping()
+void AMainController::StopJumping()
 {
 	Main -> StopJumping();
 }
 
-void APersonController::PressOne()
+void AMainController::PressOne()
 {
 	if (!IsBuildMode) {
 		BuildSystem -> SetBuild();
@@ -102,7 +102,7 @@ void APersonController::PressOne()
 	IsBuildMode = !IsBuildMode;
 }
 
-void APersonController::MouseLeft()
+void AMainController::MouseLeft()
 {
 	if (IsBuildMode) {
 		if (BuildSystem -> Building()) {
@@ -111,7 +111,7 @@ void APersonController::MouseLeft()
 	}
 }
 
-void APersonController::MouseWheelUp()
+void AMainController::MouseWheelUp()
 {
 	float ArmLength = Main -> SpringArmComponent -> TargetArmLength - 50;
 	if (ArmLength > 600) {
@@ -128,7 +128,7 @@ void APersonController::MouseWheelUp()
 	Main -> SpringArmComponent -> TargetArmLength = ArmLength;
 }
 
-void APersonController::MouseWheelDown()
+void AMainController::MouseWheelDown()
 {
 	float ArmLength = Main -> SpringArmComponent -> TargetArmLength + 50;
 	if (ArmLength > 600) {
@@ -145,7 +145,7 @@ void APersonController::MouseWheelDown()
 	Main -> SpringArmComponent -> TargetArmLength = ArmLength;
 }
 
-void APersonController::MouseRight()
+void AMainController::MouseRight()
 {
 	if (IsBuildMode) {
 		IsBuildMode = false;
@@ -154,7 +154,7 @@ void APersonController::MouseRight()
 }
 
 
-void APersonController::MoveAnimSwitch()
+void AMainController::MoveAnimSwitch()
 {
 	bool IsFalling = Main -> GetCharacterMovement() -> IsFalling();
 	bool IsCrouching = Main -> GetCharacterMovement() -> IsCrouching();

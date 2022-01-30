@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Demo/MainCharacter.h"
+#include "Demo/Character/MainCharacter.h"
 #include "Floor.h"
 #include "BuildSystem.generated.h"
 

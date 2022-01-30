@@ -3,7 +3,7 @@
 
 #include "Floor.h"
 
-#include "Demo/Lib.h"
+#include "Demo/Lib/Lib.h"
 
 // Sets default values
 AFloor::AFloor()
@@ -11,8 +11,12 @@ AFloor::AFloor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
+	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("RightSideBoxComponent"));
 	BoxComponent -> InitBoxExtent(FVector(HalfXY, HalfXY, HalfZ));
+	RightSideBoxComponent -> InitBoxExtent(FVector(200, 0, 50));
 	SetRootComponent(BoxComponent);
+	RightSideBoxComponent -> SetupAttachment(RootComponent);
+	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent -> SetupAttachment(RootComponent);
@@ -25,7 +29,8 @@ AFloor::AFloor()
 void AFloor::BeginPlay()
 {
 	Super::BeginPlay();
-	this -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Tech_Hex_Tile.M_Tech_Hex_Tile'"));
+	// Material'/Game/StarterContent/Materials/M_Tech_Hex_Tile.M_Tech_Hex_Tile'
+	this -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_ColorGrid_LowSpec.M_ColorGrid_LowSpec'"));
 	BoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::OnOverlapBegin);
 	BoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::OnOverlapEnd);
 }

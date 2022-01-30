@@ -3,7 +3,7 @@
 
 #include "MainCharacter.h"
 
-#include "Lib.h"
+#include "Demo/Lib/Lib.h"
 
 // Sets default values
 AMainCharacter::AMainCharacter()

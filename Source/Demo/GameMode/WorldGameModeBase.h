@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "PersonController.h"
-#include "MainCharacter.h"
+#include "Demo/Character/MainController.h"
+#include "Demo/Character/MainCharacter.h"
 #include "WorldGameModeBase.generated.h"
 
 /**

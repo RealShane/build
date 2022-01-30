@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* BoxComponent;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* RightSideBoxComponent;
+
 	//半长宽
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	float HalfXY = 200;

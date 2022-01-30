@@ -4,7 +4,7 @@
 #include "BuildSystem.h"
 
 #include "DrawDebugHelpers.h"
-#include "Demo/Lib.h"
+#include "Demo/Lib/Lib.h"
 
 
 // Sets default values for this component's properties
@@ -33,6 +33,7 @@ void UBuildSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	this -> BlurAttach();
+	Lib::echo("the ForceBuild is : " + FString::SanitizeFloat(ForceBuild));
 }
 
 void UBuildSystem::SetPlayer(AMainCharacter* Value)
@@ -170,29 +171,29 @@ void UBuildSystem::BlurAttach()
 					float Min = FMath::Min(FMath::Min(BuildToRight, BuildToLow), FMath::Min(BuildToLeft, BuildToUp));
 					ForceBuild = true;
 					if (Min == BuildToRight && !Saving[i].Right) {
-						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw)) * Side;
-						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw)) * Side;
-						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Right";
-					}else if (Min == BuildToLow && !Saving[i].Low) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Low";
-					}else if (Min == BuildToLeft && !Saving[i].Left) {
+						WhichSide = "Right";
+					}else if (Min == BuildToLow && !Saving[i].Low) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Left";
-					}else if (Min == BuildToUp && !Saving[i].Up) {
+						WhichSide = "Low";
+					}else if (Min == BuildToLeft && !Saving[i].Left) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						WhichSide = "Left";
+					}else if (Min == BuildToUp && !Saving[i].Up) {
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
 						WhichSide = "Up";
-					}else {
-						ForceBuild = false;
 					}
 					BuildRotation = BlockActorRotation.Yaw;
+				}else {
+					ForceBuild = false;
 				}
 			}
 		}

@@ -3,15 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Build/BuildSystem.h"
+#include "Demo/Build/BuildSystem.h"
 #include "MainCharacter.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "PersonController.generated.h"
+#include "MainController.generated.h"
 
 UCLASS()
-class DEMO_API APersonController : public APlayerController
+class DEMO_API AMainController : public APlayerController
 {
 	GENERATED_BODY()
 
@@ -21,7 +21,7 @@ protected:
 
 public:
 
-	APersonController();
+	AMainController();
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupInputComponent() override;

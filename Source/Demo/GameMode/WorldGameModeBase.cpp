@@ -3,11 +3,11 @@
 
 #include "WorldGameModeBase.h"
 
-#include "Lib.h"
+#include "Demo/Lib/Lib.h"
 
 AWorldGameModeBase::AWorldGameModeBase()
 {
-	PlayerControllerClass = APersonController::StaticClass();
+	PlayerControllerClass = AMainController::StaticClass();
 	DefaultPawnClass = AMainCharacter::StaticClass();
 }
 
