@@ -33,7 +33,7 @@ void UBuildSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	this -> BlurAttach();
-	Lib::echo("the ForceBuild is : " + FString::SanitizeFloat(ForceBuild));
+	// Lib::echo("the ForceBuild is : " + FString::SanitizeFloat(ForceBuild));
 }
 
 void UBuildSystem::SetPlayer(AMainCharacter* Value)

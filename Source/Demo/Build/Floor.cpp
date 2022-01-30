@@ -4,17 +4,21 @@
 #include "Floor.h"
 
 #include "Demo/Lib/Lib.h"
+#include "Demo/Lib/Str.h"
 
 // Sets default values
 AFloor::AFloor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("RightSideBoxComponent"));
 	BoxComponent -> InitBoxExtent(FVector(HalfXY, HalfXY, HalfZ));
-	RightSideBoxComponent -> InitBoxExtent(FVector(200, 0, 50));
 	SetRootComponent(BoxComponent);
+	
+	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Right"));
+	RightSideBoxComponent -> InitBoxExtent(FVector(200, 10, 30));
+	RightSideBoxComponent -> SetRelativeLocation(FVector(0, 200, 0));
 	RightSideBoxComponent -> SetupAttachment(RootComponent);
 	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
@@ -61,10 +65,51 @@ void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAc
 {
 	BlockActorName = OtherActor -> GetName();
 	IsBlock = true;
+	if (Str::IsBuildContain(OtherActor -> GetName())) {
+		FBlockActor BlockActor;
+		BlockActor.Name = OtherActor -> GetName();
+		if (OtherComp -> GetName() == "Right") {
+			BlockActor.Right = true;
+		}
+		if (OtherComp -> GetName() == "Low") {
+			BlockActor.Low = true;
+		}
+		if (OtherComp -> GetName() == "Left") {
+			BlockActor.Left = true;
+		}
+		if (OtherComp -> GetName() == "Up") {
+			BlockActor.Up = true;
+		}
+		BlockSideCache.Emplace(BlockActor);
+	}
+	Lib::echo("---------------------------------------");
+	if (!BlockSideCache.IsEmpty()) {
+		for (FBlockActor Item : BlockSideCache) {
+			Lib::echo("Begin Cache Item " + Item.Name);
+		}
+	}
+	Lib::echo("---------------------------------------");
 }
  
 void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	BlockActorName = nullptr;
 	IsBlock = false;
+	if (!BlockSideCache.IsEmpty()) {
+		if (Str::IsBuildContain(OtherActor -> GetName())) {
+			BlockSideCache.Pop();
+			// for (FBlockActor Item : BlockSideCache) {
+			// 	if (Item.Name == OtherActor -> GetName()) {
+			// 		BlockSideCache.Remove(Item);
+			// 	}
+			// }
+		}
+	}
+	Lib::echo("---------------------------------------");
+	if (!BlockSideCache.IsEmpty()) {
+		for (FBlockActor Item : BlockSideCache) {
+			Lib::echo("End Cache Item " + Item.Name);
+		}
+	}
+	Lib::echo("---------------------------------------");
 }

@@ -7,6 +7,28 @@
 #include "GameFramework/Actor.h"
 #include "Floor.generated.h"
 
+USTRUCT(BlueprintType)
+struct FBlockActor
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Name;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Right = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Low = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Left = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Up = false;
+	
+};
+
 UCLASS()
 class DEMO_API AFloor : public AActor
 {
@@ -50,6 +72,9 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BlockActorName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	TArray<FBlockActor> BlockSideCache;
 
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision);
 
