@@ -17,9 +17,24 @@ AFloor::AFloor()
 	SetRootComponent(BoxComponent);
 	
 	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Right"));
-	RightSideBoxComponent -> InitBoxExtent(FVector(200, 10, 30));
+	RightSideBoxComponent -> InitBoxExtent(FVector(100, 10, 30));
 	RightSideBoxComponent -> SetRelativeLocation(FVector(0, 200, 0));
 	RightSideBoxComponent -> SetupAttachment(RootComponent);
+
+	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Low"));
+	LowSideBoxComponent -> InitBoxExtent(FVector(10, 100, 30));
+	LowSideBoxComponent -> SetRelativeLocation(FVector(-200, 0, 0));
+	LowSideBoxComponent -> SetupAttachment(RootComponent);
+
+	LeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Left"));
+	LeftSideBoxComponent -> InitBoxExtent(FVector(100, 10, 30));
+	LeftSideBoxComponent -> SetRelativeLocation(FVector(0, -200, 0));
+	LeftSideBoxComponent -> SetupAttachment(RootComponent);
+
+	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Up"));
+	UpSideBoxComponent -> InitBoxExtent(FVector(10, 100, 30));
+	UpSideBoxComponent -> SetRelativeLocation(FVector(200, 0, 0));
+	UpSideBoxComponent -> SetupAttachment(RootComponent);
 	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
@@ -63,53 +78,56 @@ void AFloor::SetMaterial(FString Value)
 
 void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	BlockActorName = OtherActor -> GetName();
-	IsBlock = true;
-	if (Str::IsBuildContain(OtherActor -> GetName())) {
-		FBlockActor BlockActor;
-		BlockActor.Name = OtherActor -> GetName();
-		if (OtherComp -> GetName() == "Right") {
-			BlockActor.Right = true;
-		}
-		if (OtherComp -> GetName() == "Low") {
-			BlockActor.Low = true;
-		}
-		if (OtherComp -> GetName() == "Left") {
-			BlockActor.Left = true;
-		}
-		if (OtherComp -> GetName() == "Up") {
-			BlockActor.Up = true;
-		}
-		BlockSideCache.Emplace(BlockActor);
-	}
-	Lib::echo("---------------------------------------");
-	if (!BlockSideCache.IsEmpty()) {
-		for (FBlockActor Item : BlockSideCache) {
-			Lib::echo("Begin Cache Item " + Item.Name);
+	if (!IsSet) {
+		IsBlock = true;
+		if (Str::IsBuildContain(OtherActor -> GetName()) && OtherActor -> GetName() != GetName()) {
+			BlockActorName = OtherActor -> GetName();
+			FString BlockActorComp = OtherComp -> GetName();
+			if (Str::IsSideContain(BlockActorComp)) {
+				FBlockActor BlockActor;
+				BlockActor.Name = BlockActorName;
+				BlockActor.Side = BlockActorComp;
+				BlockSideCache.Emplace(BlockActor);
+				if (BlockActorComp == "Right") {
+					Left = true;
+				}else if (BlockActorComp == "Low") {
+					Up = true;
+				}else if (BlockActorComp == "Left") {
+					Right = true;
+				}else if (BlockActorComp == "Up") {
+					Low = true;
+				}
+				Lib::echo("insert : " + BlockActorName + " --- " + BlockActorComp);
+			}
 		}
 	}
-	Lib::echo("---------------------------------------");
 }
  
 void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	BlockActorName = nullptr;
-	IsBlock = false;
-	if (!BlockSideCache.IsEmpty()) {
-		if (Str::IsBuildContain(OtherActor -> GetName())) {
-			BlockSideCache.Pop();
-			// for (FBlockActor Item : BlockSideCache) {
-			// 	if (Item.Name == OtherActor -> GetName()) {
-			// 		BlockSideCache.Remove(Item);
-			// 	}
-			// }
+	if (!IsSet) {
+		BlockActorName = nullptr;
+		IsBlock = false;
+		if (!BlockSideCache.IsEmpty()) {
+			FString UnBlockActorName = OtherActor -> GetName();
+			FString BlockActorComp = OtherComp -> GetName();
+			if (Str::IsBuildContain(UnBlockActorName) && Str::IsSideContain(BlockActorComp)) {
+				for (int i = 0; i < BlockSideCache.Num(); i++) {
+					if (BlockSideCache[i].Name == UnBlockActorName && BlockSideCache[i].Side == BlockActorComp) {
+						Lib::echo("remove : " + UnBlockActorName + " --- " + BlockActorComp);
+						BlockSideCache.RemoveAt(i);
+						if (BlockActorComp == "Right") {
+							Left = true;
+						}else if (BlockActorComp == "Low") {
+							Up = true;
+						}else if (BlockActorComp == "Left") {
+							Right = true;
+						}else if (BlockActorComp == "Up") {
+							Low = true;
+						}
+					}
+				}
+			}
 		}
 	}
-	Lib::echo("---------------------------------------");
-	if (!BlockSideCache.IsEmpty()) {
-		for (FBlockActor Item : BlockSideCache) {
-			Lib::echo("End Cache Item " + Item.Name);
-		}
-	}
-	Lib::echo("---------------------------------------");
 }

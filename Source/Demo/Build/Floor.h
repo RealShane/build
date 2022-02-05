@@ -16,16 +16,7 @@ struct FBlockActor
 	FString Name;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Right = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Low = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Left = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Up = false;
+	FString Side;
 	
 };
 
@@ -55,6 +46,15 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* RightSideBoxComponent;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* LowSideBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* LeftSideBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* UpSideBoxComponent;
+
 	//半长宽
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	float HalfXY = 200;
@@ -71,10 +71,25 @@ public:
 	bool IsBlock = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsSet = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BlockActorName;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TArray<FBlockActor> BlockSideCache;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Right = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Low = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Left = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Up = false;
 
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision);
 

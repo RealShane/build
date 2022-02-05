@@ -33,7 +33,6 @@ void UBuildSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	this -> BlurAttach();
-	// Lib::echo("the ForceBuild is : " + FString::SanitizeFloat(ForceBuild));
 }
 
 void UBuildSystem::SetPlayer(AMainCharacter* Value)
@@ -53,27 +52,34 @@ bool UBuildSystem::Building()
 		Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
 		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
 		Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
-		if (ForceBuild) {
-			if (WhichSide == "Right") {
-				Saving[Index].Right = true;
-			}else if (WhichSide == "Low") {
-				Saving[Index].Low = true;
-			}else if (WhichSide == "Left") {
-				Saving[Index].Left = true;
-			}else if (WhichSide == "Up") {
-				Saving[Index].Up = true;
-			}
-			Lib::echo("Right is : " + FString::SanitizeFloat(Saving[Index].Right));
-			Lib::echo("Low is : " + FString::SanitizeFloat(Saving[Index].Low));
-			Lib::echo("Left is : " + FString::SanitizeFloat(Saving[Index].Left));
-			Lib::echo("Up is : " + FString::SanitizeFloat(Saving[Index].Up));
-		}
+		Cast<AFloor>(BuildItem) -> IsSet = true;
 		FBuildCache Cache;
 		Cache.HealthPoints = 100;
 		Cache.Type = "Floor";
 		Cache.Building = BuildItem;
 		Cache.Location = BuildLocation;
 		Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
+		if (ForceBuild) {
+			for (int i = 0; i < Saving.Num(); i++) {
+				for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
+					if (Saving[i].Building -> GetName() == Item.Name) {
+						if (Item.Side == "Right") {
+							Saving[i].Right = true;
+						}else if (Item.Side == "Low") {
+							Saving[i].Low = true;
+						}else if (Item.Side == "Left") {
+							Saving[i].Left = true;
+						}else if (Item.Side == "Up") {
+							Saving[i].Up = true;
+						}
+					}
+				}
+			}
+			Cache.Right = Cast<AFloor>(BuildItem) -> Right;
+			Cache.Low = Cast<AFloor>(BuildItem) -> Low;
+			Cache.Left = Cast<AFloor>(BuildItem) -> Left;
+			Cache.Up = Cast<AFloor>(BuildItem) -> Up;
+		}
 		Saving.Emplace(Cache);
 		BuildItem = nullptr;
 		return true;
@@ -87,7 +93,7 @@ bool UBuildSystem::Building()
 void UBuildSystem::SetBuild()
 {
 	if (BuildItem == nullptr) {
-		BuildItem = GetWorld() -> SpawnActor<AFloor>(FVector(0, 0, -10000), FRotator(0));
+		BuildItem = GetWorld() -> SpawnActor<AFloor>(FVector(0, 0, 10000), FRotator(0));
 		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
 	}
 }
@@ -143,55 +149,36 @@ void UBuildSystem::BlurAttach()
 						break;
 					}
 				}
-				Index = i;
 				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+					FString AttachSide;
+					for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
+						if (Item.Name == BlockActorName) {
+							AttachSide = Item.Side;
+						}
+					}
 					float Side = Cast<AFloor>(BuildItem) -> HalfXY * 2;
-					float CenterToTop = Cast<AFloor>(BuildItem) -> HalfXY * FMath::Sqrt(2.f);
-					//右上角
-					float RightUpX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 45)) * CenterToTop;
-					float RightUpY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 45)) * CenterToTop;
-					//左上角
-					float LeftUpX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 135)) * CenterToTop;
-					float LeftUpY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 135)) * CenterToTop;
-					//左下角
-					float LeftLowX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 225)) * CenterToTop;
-					float LeftLowY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 225)) * CenterToTop;
-					//右下角
-					float RightLowX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 315)) * CenterToTop;
-					float RightLowY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 315)) * CenterToTop;
-
-					FVector RightSideCenter = BlockActorLocation + FVector((RightUpX - RightLowX) / 2, (RightUpY - RightLowY) / 2, 0);
-					FVector LowSideCenter = BlockActorLocation - FVector((RightLowX - LeftLowX) / 2, (RightLowY - LeftLowY) / 2, 0);
-					FVector LeftSideCenter = BlockActorLocation - FVector((LeftUpX - LeftLowX) / 2, (LeftUpY - LeftLowY) / 2, 0);
-					FVector UpSideCenter = BlockActorLocation + FVector((RightUpX - LeftUpX) / 2, (RightUpY - LeftUpY) / 2, 0);
-					float BuildToRight = FMath::Sqrt(FMath::Square(BuildLocation.X - RightSideCenter.X) + FMath::Square(BuildLocation.Y - RightSideCenter.Y));
-					float BuildToLow = FMath::Sqrt(FMath::Square(BuildLocation.X - LowSideCenter.X) + FMath::Square(BuildLocation.Y - LowSideCenter.Y));
-					float BuildToLeft = FMath::Sqrt(FMath::Square(BuildLocation.X - LeftSideCenter.X) + FMath::Square(BuildLocation.Y - LeftSideCenter.Y));
-					float BuildToUp = FMath::Sqrt(FMath::Square(BuildLocation.X - UpSideCenter.X) + FMath::Square(BuildLocation.Y - UpSideCenter.Y));
-					float Min = FMath::Min(FMath::Min(BuildToRight, BuildToLow), FMath::Min(BuildToLeft, BuildToUp));
-					ForceBuild = true;
-					if (Min == BuildToRight && !Saving[i].Right) {
+					if (AttachSide == "Right" && !Saving[i].Right) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Right";
-					}else if (Min == BuildToLow && !Saving[i].Low) {
+					}
+					if (AttachSide == "Low" && !Saving[i].Low) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Low";
-					}else if (Min == BuildToLeft && !Saving[i].Left) {
+					}
+					if (AttachSide == "Left" && !Saving[i].Left) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Left";
-					}else if (Min == BuildToUp && !Saving[i].Up) {
+					}
+					if (AttachSide == "Up" && !Saving[i].Up) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-						WhichSide = "Up";
 					}
 					BuildRotation = BlockActorRotation.Yaw;
+					ForceBuild = true;
 				}else {
 					ForceBuild = false;
 				}

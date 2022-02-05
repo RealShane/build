@@ -80,12 +80,6 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool ForceBuild = false;
 
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	int Index;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString WhichSide;
-
 	void SetPlayer(AMainCharacter* Value);
 	void SetBuild();
 	void UnSetBuild();

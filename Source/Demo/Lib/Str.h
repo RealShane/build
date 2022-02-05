@@ -11,6 +11,7 @@ class DEMO_API Str
 {
 
 public:
+    bool static IsSideContain(FString Value);
     bool static IsBuildContain(FString Value);
     bool static IsContain(FString Value, FString Key);
 };
