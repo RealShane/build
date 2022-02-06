@@ -70,11 +70,19 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsBlock = false;
 
+	//是否已放置
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsSet = false;
 
+	//是否附着
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool IsAttach = false;
+
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BlockActorName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockActorSide;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TArray<FBlockActor> BlockSideCache;
@@ -100,5 +108,32 @@ public:
  
 	UFUNCTION()
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+ 
+	UFUNCTION()
+	void RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+ 
+	UFUNCTION()
+	void LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+ 
+	UFUNCTION()
+	void LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+ 
+	UFUNCTION()
+	void UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	bool Save(FString Name, FString CompName);
+	bool Remove(FString Name, FString CompName);
 
 };

@@ -77,9 +77,6 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TArray<FBuildCache> Saving;
 
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool ForceBuild = false;
-
 	void SetPlayer(AMainCharacter* Value);
 	void SetBuild();
 	void UnSetBuild();

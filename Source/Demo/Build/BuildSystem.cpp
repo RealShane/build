@@ -43,8 +43,7 @@ void UBuildSystem::SetPlayer(AMainCharacter* Value)
 bool UBuildSystem::Building()
 {
 	if (BuildItem != nullptr) {
-		bool IsBlock = Cast<AFloor>(BuildItem) -> IsBlock;
-		if (IsBlock && !ForceBuild) {
+		if (Cast<AFloor>(BuildItem) -> IsBlock && !Cast<AFloor>(BuildItem) -> IsAttach) {
 			//TODO UI显示被阻挡无法放置
 			Lib::echo(TEXT("被阻挡无法放置！"));
 			return false;
@@ -59,7 +58,7 @@ bool UBuildSystem::Building()
 		Cache.Building = BuildItem;
 		Cache.Location = BuildLocation;
 		Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
-		if (ForceBuild) {
+		if (Cast<AFloor>(BuildItem) -> IsAttach) {
 			for (int i = 0; i < Saving.Num(); i++) {
 				for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
 					if (Saving[i].Building -> GetName() == Item.Name) {
@@ -137,8 +136,7 @@ void UBuildSystem::BlurAttach()
 		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z - 100) + FVector(X, Y, 0);
 		// 检测阻挡建筑是否可以附着
 		FString BlockActorName = Cast<AFloor>(BuildItem) -> BlockActorName;
-		if (!BlockActorName.IsEmpty()) {
-			if (!Saving.IsEmpty()) {
+		if (Cast<AFloor>(BuildItem) -> IsAttach) {
 				FVector BlockActorLocation = FVector::DownVector;
 				FRotator BlockActorRotation = FRotator::ZeroRotator;
 				int i = 0;
@@ -150,42 +148,36 @@ void UBuildSystem::BlurAttach()
 					}
 				}
 				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
-					FString AttachSide;
-					for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
-						if (Item.Name == BlockActorName) {
-							AttachSide = Item.Side;
-						}
-					}
+					FString AttachSide = Cast<AFloor>(BuildItem) -> BlockActorSide;
 					float Side = Cast<AFloor>(BuildItem) -> HalfXY * 2;
 					if (AttachSide == "Right" && !Saving[i].Right) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						BuildRotation = BlockActorRotation.Yaw;
 					}
 					if (AttachSide == "Low" && !Saving[i].Low) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						BuildRotation = BlockActorRotation.Yaw;
 					}
 					if (AttachSide == "Left" && !Saving[i].Left) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						BuildRotation = BlockActorRotation.Yaw;
 					}
 					if (AttachSide == "Up" && !Saving[i].Up) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						BuildRotation = BlockActorRotation.Yaw;
 					}
-					BuildRotation = BlockActorRotation.Yaw;
-					ForceBuild = true;
-				}else {
-					ForceBuild = false;
 				}
-			}
 		}
-		Cast<AFloor>(BuildItem) -> SetActorLocation(BuildLocation);
 		Cast<AFloor>(BuildItem) -> SetActorRotation(FRotator(0, BuildRotation, 0));
+		Cast<AFloor>(BuildItem) -> SetActorLocation(BuildLocation);
 	}
 }
 

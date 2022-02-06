@@ -52,6 +52,15 @@ void AFloor::BeginPlay()
 	this -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_ColorGrid_LowSpec.M_ColorGrid_LowSpec'"));
 	BoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::OnOverlapBegin);
 	BoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::OnOverlapEnd);
+
+	RightSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::RightOverlapBegin);
+	RightSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::RightOverlapEnd);
+	LowSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::LowOverlapBegin);
+	LowSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::LowOverlapEnd);
+	LeftSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::LeftOverlapBegin);
+	LeftSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::LeftOverlapEnd);
+	UpSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::UpOverlapBegin);
+	UpSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::UpOverlapEnd);
 }
 
 // Called every frame
@@ -79,55 +88,102 @@ void AFloor::SetMaterial(FString Value)
 void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!IsSet) {
+		Lib::echo("Block begin : " + OtherActor -> GetName() + " --- " + OtherComp -> GetName());
 		IsBlock = true;
-		if (Str::IsBuildContain(OtherActor -> GetName()) && OtherActor -> GetName() != GetName()) {
-			BlockActorName = OtherActor -> GetName();
-			FString BlockActorComp = OtherComp -> GetName();
-			if (Str::IsSideContain(BlockActorComp)) {
-				FBlockActor BlockActor;
-				BlockActor.Name = BlockActorName;
-				BlockActor.Side = BlockActorComp;
-				BlockSideCache.Emplace(BlockActor);
-				if (BlockActorComp == "Right") {
-					Left = true;
-				}else if (BlockActorComp == "Low") {
-					Up = true;
-				}else if (BlockActorComp == "Left") {
-					Right = true;
-				}else if (BlockActorComp == "Up") {
-					Low = true;
-				}
-				Lib::echo("insert : " + BlockActorName + " --- " + BlockActorComp);
-			}
-		}
 	}
 }
  
 void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (!IsSet) {
-		BlockActorName = nullptr;
+		Lib::echo("Block end : " + OtherActor -> GetName() + " --- " + OtherComp -> GetName());
 		IsBlock = false;
-		if (!BlockSideCache.IsEmpty()) {
-			FString UnBlockActorName = OtherActor -> GetName();
-			FString BlockActorComp = OtherComp -> GetName();
-			if (Str::IsBuildContain(UnBlockActorName) && Str::IsSideContain(BlockActorComp)) {
-				for (int i = 0; i < BlockSideCache.Num(); i++) {
-					if (BlockSideCache[i].Name == UnBlockActorName && BlockSideCache[i].Side == BlockActorComp) {
-						Lib::echo("remove : " + UnBlockActorName + " --- " + BlockActorComp);
-						BlockSideCache.RemoveAt(i);
-						if (BlockActorComp == "Right") {
-							Left = true;
-						}else if (BlockActorComp == "Low") {
-							Up = true;
-						}else if (BlockActorComp == "Left") {
-							Right = true;
-						}else if (BlockActorComp == "Up") {
-							Low = true;
-						}
-					}
-				}
+	}
+}
+
+void AFloor::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Right = true;
+	}
+}
+ 
+void AFloor::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Right = false;
+	}
+}
+
+void AFloor::LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Low = true;
+	}
+}
+ 
+void AFloor::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Low = false;
+	}
+}
+
+void AFloor::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Left = true;
+	}
+}
+ 
+void AFloor::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Left = false;
+	}
+}
+
+void AFloor::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Up = true;
+	}
+}
+ 
+void AFloor::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Up = false;
+	}
+}
+
+bool AFloor::Save(FString Name, FString CompName)
+{
+	if (!IsSet && Str::IsBuildContain(Name) && Name != GetName() && Str::IsSideContain(CompName)) {
+		IsAttach = true;
+		BlockActorName = Name;
+		BlockActorSide = CompName;
+		FBlockActor BlockActor;
+		BlockActor.Name = Name;
+		BlockActor.Side = CompName;
+		BlockSideCache.Emplace(BlockActor);
+		return true;
+	}
+	return false;
+}
+
+bool AFloor::Remove(FString Name, FString CompName)
+{
+	if (!IsSet && !BlockSideCache.IsEmpty() && Str::IsBuildContain(Name) && Str::IsSideContain(CompName)) {
+		IsAttach = false;
+		BlockActorName = nullptr;
+		BlockActorSide = nullptr;
+		for (int i = 0; i < BlockSideCache.Num(); i++) {
+			if (BlockSideCache[i].Name == Name && BlockSideCache[i].Side == CompName) {
+				BlockSideCache.RemoveAt(i);
 			}
 		}
+		return true;
 	}
+	return false;
 }
