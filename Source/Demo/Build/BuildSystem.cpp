@@ -43,7 +43,7 @@ void UBuildSystem::SetPlayer(AMainCharacter* Value)
 bool UBuildSystem::Building()
 {
 	if (BuildItem != nullptr) {
-		if (Cast<AFloor>(BuildItem) -> IsBlock && !Cast<AFloor>(BuildItem) -> IsAttach) {
+		if (Cast<AFloor>(BuildItem) -> IsBlock) {
 			//TODO UI显示被阻挡无法放置
 			Lib::echo(TEXT("被阻挡无法放置！"));
 			return false;

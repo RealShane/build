@@ -23,4 +23,20 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UStaticMeshComponent* StaticMeshComponent;
+
+
+	//半长宽
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float HalfXY = 10;
+
+	//高
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float HalfZ = 200;
+
+	//模型与UE世界比例
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float XYZScale = 50;
+
 };
