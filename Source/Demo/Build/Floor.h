@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/Actor.h"
 #include "Floor.generated.h"
 
@@ -77,6 +78,9 @@ public:
 	//是否附着
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsAttach = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString OverlapActorName;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BlockActorName;

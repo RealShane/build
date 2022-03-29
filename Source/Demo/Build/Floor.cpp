@@ -67,6 +67,7 @@ void AFloor::BeginPlay()
 void AFloor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	Lib::echo("Block bool : " + FString::SanitizeFloat(IsBlock));
 }
 
 void AFloor::SetCollision(ECollisionEnabled::Type Type)
@@ -88,16 +89,23 @@ void AFloor::SetMaterial(FString Value)
 void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!IsSet) {
-		Lib::echo("Block begin : " + OtherActor -> GetName() + " --- " + OtherComp -> GetName());
-		IsBlock = true;
+		if (OtherComp -> GetName() == "BoxComponent") {
+			//TODO 这里有bug 碰撞体积来回切换01 无法判定是否为重叠 不能放置
+			OverlapActorName = OtherActor -> GetName();
+			IsBlock = true;
+			Lib::echo("Block begin : " + this -> GetName() + " --- " + OtherActor -> GetName() + " --- " + OtherComp -> GetName());
+		}
 	}
 }
  
 void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (!IsSet) {
-		Lib::echo("Block end : " + OtherActor -> GetName() + " --- " + OtherComp -> GetName());
-		IsBlock = false;
+		if (OtherComp -> GetName() == "BoxComponent" && OtherActor -> GetName() == OverlapActorName) {
+			OverlapActorName = nullptr;
+			IsBlock = false;
+			Lib::echo("Block end : " + this -> GetName() + " --- " + OtherActor -> GetName() + " --- " + OtherComp -> GetName());
+		}
 	}
 }
 
