@@ -57,7 +57,7 @@ public:
 
 	//半长宽
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float HalfXY = 200;
+	float HalfXY = 190;
 
 	//高
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
