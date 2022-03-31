@@ -95,11 +95,8 @@ void AMainController::StopJumping()
 
 void AMainController::PressOne()
 {
-	if (!IsBuildMode) {
-		BuildSystem -> SetBuild();
-	}else {
-		BuildSystem -> UnSetBuild();
-	}
+	BuildType = "Floor";
+	BuildSystem -> SetBuild(BuildType);
 	IsBuildMode = !IsBuildMode;
 }
 
@@ -155,7 +152,7 @@ void AMainController::MouseRight()
 {
 	if (IsBuildMode) {
 		IsBuildMode = false;
-		BuildSystem -> UnSetBuild();
+		BuildSystem -> SetBuild(BuildType);
 	}
 }
 

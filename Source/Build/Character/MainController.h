@@ -55,6 +55,9 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsBuildMode = false;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BuildType;
+
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);

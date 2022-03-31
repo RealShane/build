@@ -42,69 +42,19 @@ void UBuildSystem::SetPlayer(AMainCharacter* Value)
 
 bool UBuildSystem::Building()
 {
-	if (BuildItem != nullptr) {
-		if (Cast<AFloor>(BuildItem) -> IsBlock) {
-			//TODO UI显示被阻挡无法放置
-			Lib::echo(TEXT("被阻挡无法放置！"));
-			return false;
-		}
-		Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-		Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
-		Cast<AFloor>(BuildItem) -> IsSet = true;
-		FBuildCache Cache;
-		Cache.HealthPoints = 100;
-		Cache.Type = "Floor";
-		Cache.Building = BuildItem;
-		Cache.Location = BuildLocation;
-		Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
-		if (Cast<AFloor>(BuildItem) -> IsAttach) {
-			for (int i = 0; i < Saving.Num(); i++) {
-				for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
-					if (Saving[i].Building -> GetName() == Item.Name) {
-						if (Item.Side == "Right") {
-							Saving[i].Right = true;
-						}else if (Item.Side == "Low") {
-							Saving[i].Low = true;
-						}else if (Item.Side == "Left") {
-							Saving[i].Left = true;
-						}else if (Item.Side == "Up") {
-							Saving[i].Up = true;
-						}
-					}
-				}
-			}
-			Cache.Right = Cast<AFloor>(BuildItem) -> Right;
-			Cache.Low = Cast<AFloor>(BuildItem) -> Low;
-			Cache.Left = Cast<AFloor>(BuildItem) -> Left;
-			Cache.Up = Cast<AFloor>(BuildItem) -> Up;
-		}
-		Saving.Emplace(Cache);
-		BuildItem = nullptr;
-		return true;
+	if (BuildType == "Floor") {
+		return this -> FloorBuild();
 	}
 	return false;
 }
 
 /**
- * 显示虚影
+ * 显示取消虚影
  */
-void UBuildSystem::SetBuild()
+void UBuildSystem::SetBuild(FString Type)
 {
-	if (BuildItem == nullptr) {
-		BuildItem = GetWorld() -> SpawnActor<AFloor>(FVector(0, 0, 10000), FRotator(0));
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
-	}
-}
-
-/**
- * 取消虚影
- */
-void UBuildSystem::UnSetBuild()
-{
-	if (BuildItem != nullptr) {
-		GetWorld() -> DestroyActor(Cast<AFloor>(BuildItem));
-		BuildItem = nullptr;
+	if (Type == "Floor") {
+		this -> Floor();
 	}
 }
 
@@ -112,6 +62,47 @@ void UBuildSystem::UnSetBuild()
  * 虚影可移动附着
  */
 void UBuildSystem::BlurAttach()
+{
+	if (BuildType == "Floor") {
+		this -> FloorBlurAttach();
+	}
+}
+
+bool UBuildSystem::IsCollision()
+{
+	FHitResult OutHit;
+	FVector Start = Cast<AFloor>(BuildItem) -> GetActorLocation();
+	Start.X += 100;
+	Start.Y += 50;
+	FVector ForwardVector = Cast<AFloor>(BuildItem) -> GetActorForwardVector();
+	FVector End = ((ForwardVector * 500.f) + Start);
+	// FTransform MyTransform = FTransform(FVector(-500, 50, 400));
+	// FBox MyBox = FBox(FVector(0, 0, 0), FVector(400, 400, 20));
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 5);
+	// DrawDebugSolidBox(GetWorld(), MyBox, FColor::White, MyTransform, true);
+	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_WorldStatic)){
+		//获得碰撞到的物体的组件名称并打印
+		Lib::echo("The Component Being Hit by Channel is : " + OutHit.GetComponent()->GetName());
+		return true;
+	}
+	return false;
+}
+
+
+void UBuildSystem::Floor()
+{
+	if (BuildItem == nullptr) {
+		BuildItem = GetWorld() -> SpawnActor<AFloor>(FVector(0, 0, 10000), FRotator(0));
+		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
+		BuildType = "Floor";
+	}else {
+		GetWorld() -> DestroyActor(Cast<AFloor>(BuildItem));
+		BuildItem = nullptr;
+		BuildType = nullptr;
+	}
+}
+
+void UBuildSystem::FloorBlurAttach()
 {
 	if (BuildItem != nullptr) {
 		//视角旋转的Yaw值是极坐标ρ
@@ -181,21 +172,47 @@ void UBuildSystem::BlurAttach()
 	}
 }
 
-bool UBuildSystem::IsCollision()
+bool UBuildSystem::FloorBuild()
 {
-	FHitResult OutHit;
-	FVector Start = Cast<AFloor>(BuildItem) -> GetActorLocation();
-	Start.X += 100;
-	Start.Y += 50;
-	FVector ForwardVector = Cast<AFloor>(BuildItem) -> GetActorForwardVector();
-	FVector End = ((ForwardVector * 500.f) + Start);
-	// FTransform MyTransform = FTransform(FVector(-500, 50, 400));
-	// FBox MyBox = FBox(FVector(0, 0, 0), FVector(400, 400, 20));
-	// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 5);
-	// DrawDebugSolidBox(GetWorld(), MyBox, FColor::White, MyTransform, true);
-	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_WorldStatic)){
-		//获得碰撞到的物体的组件名称并打印
-		Lib::echo("The Component Being Hit by Channel is : " + OutHit.GetComponent()->GetName());
+	if (BuildItem != nullptr) {
+		if (Cast<AFloor>(BuildItem) -> IsBlock) {
+			//TODO UI显示被阻挡无法放置
+			Lib::echo(TEXT("被阻挡无法放置！"));
+			return false;
+		}
+		Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
+		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
+		Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
+		Cast<AFloor>(BuildItem) -> IsSet = true;
+		FBuildCache Cache;
+		Cache.HealthPoints = 100;
+		Cache.Type = "Floor";
+		Cache.Building = BuildItem;
+		Cache.Location = BuildLocation;
+		Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
+		if (Cast<AFloor>(BuildItem) -> IsAttach) {
+			for (int i = 0; i < Saving.Num(); i++) {
+				for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
+					if (Saving[i].Building -> GetName() == Item.Name) {
+						if (Item.Side == "Right") {
+							Saving[i].Right = true;
+						}else if (Item.Side == "Low") {
+							Saving[i].Low = true;
+						}else if (Item.Side == "Left") {
+							Saving[i].Left = true;
+						}else if (Item.Side == "Up") {
+							Saving[i].Up = true;
+						}
+					}
+				}
+			}
+			Cache.Right = Cast<AFloor>(BuildItem) -> Right;
+			Cache.Low = Cast<AFloor>(BuildItem) -> Low;
+			Cache.Left = Cast<AFloor>(BuildItem) -> Left;
+			Cache.Up = Cast<AFloor>(BuildItem) -> Up;
+		}
+		Saving.Emplace(Cache);
+		BuildItem = nullptr;
 		return true;
 	}
 	return false;

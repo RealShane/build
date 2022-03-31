@@ -75,12 +75,19 @@ public:
 	UObject* BuildItem = nullptr;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BuildType;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TArray<FBuildCache> Saving;
 
 	void SetPlayer(AMainCharacter* Value);
-	void SetBuild();
-	void UnSetBuild();
+	void SetBuild(FString Type);
 	void BlurAttach();
 	bool Building();
 	bool IsCollision();
+
+
+	void Floor();
+	void FloorBlurAttach();
+	bool FloorBuild();
 };
