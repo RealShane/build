@@ -95,7 +95,7 @@ void AMainController::StopJumping()
 
 void AMainController::PressOne()
 {
-	BuildType = "Floor";
+	BuildType = "Foundation";
 	BuildSystem -> SetBuild(BuildType);
 	IsBuildMode = !IsBuildMode;
 }

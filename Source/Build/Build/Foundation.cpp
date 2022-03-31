@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Floor.h"
+#include "Foundation.h"
 
 #include "Build/Lib/Lib.h"
 #include "Build/Lib/Str.h"
 
 // Sets default values
-AFloor::AFloor()
+AFoundation::AFoundation()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -36,35 +36,35 @@ AFloor::AFloor()
 	UpSideBoxComponent -> SetRelativeLocation(FVector(200, 0, 0));
 	UpSideBoxComponent -> SetupAttachment(RootComponent);
 	
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Foundation(TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent -> SetupAttachment(RootComponent);
-	StaticMeshComponent -> SetStaticMesh(Floor.Object);
+	StaticMeshComponent -> SetStaticMesh(Foundation.Object);
 	StaticMeshComponent -> SetRelativeScale3D(FVector(HalfXY / XYZScale, HalfXY / XYZScale, HalfZ / XYZScale));
 	StaticMeshComponent -> SetRelativeLocation(FVector(0, 0, -HalfZ));
 }
 
 // Called when the game starts or when spawned
-void AFloor::BeginPlay()
+void AFoundation::BeginPlay()
 {
 	Super::BeginPlay();
 	// Material'/Game/StarterContent/Materials/M_Tech_Hex_Tile.M_Tech_Hex_Tile'
 	this -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_ColorGrid_LowSpec.M_ColorGrid_LowSpec'"));
-	BoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::OnOverlapBegin);
-	BoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::OnOverlapEnd);
+	BoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFoundation::OnOverlapBegin);
+	BoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFoundation::OnOverlapEnd);
 
-	RightSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::RightOverlapBegin);
-	RightSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::RightOverlapEnd);
-	LowSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::LowOverlapBegin);
-	LowSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::LowOverlapEnd);
-	LeftSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::LeftOverlapBegin);
-	LeftSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::LeftOverlapEnd);
-	UpSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFloor::UpOverlapBegin);
-	UpSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFloor::UpOverlapEnd);
+	RightSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFoundation::RightOverlapBegin);
+	RightSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFoundation::RightOverlapEnd);
+	LowSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFoundation::LowOverlapBegin);
+	LowSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFoundation::LowOverlapEnd);
+	LeftSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFoundation::LeftOverlapBegin);
+	LeftSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFoundation::LeftOverlapEnd);
+	UpSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AFoundation::UpOverlapBegin);
+	UpSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AFoundation::UpOverlapEnd);
 }
 
 // Called every frame
-void AFloor::Tick(float DeltaTime)
+void AFoundation::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (!IsSet) {
@@ -72,7 +72,7 @@ void AFloor::Tick(float DeltaTime)
 	}
 }
 
-void AFloor::SetCollision(ECollisionEnabled::Type Type)
+void AFoundation::SetCollision(ECollisionEnabled::Type Type)
 {
 	StaticMeshComponent -> SetCollisionEnabled(Type);
 	if (Type == ECollisionEnabled::QueryOnly) {
@@ -82,13 +82,13 @@ void AFloor::SetCollision(ECollisionEnabled::Type Type)
 	}
 }
 
-void AFloor::SetMaterial(FString Value)
+void AFoundation::SetMaterial(FString Value)
 {
-	UMaterialInterface* Material = LoadObject<UMaterialInterface>(NULL, *Value);
+	UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, *Value);
 	StaticMeshComponent -> SetMaterial(0, Material);
 }
 
-void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!IsSet && OtherComp -> GetName() == "BoxComponent") {
 		Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
@@ -97,7 +97,7 @@ void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAc
 	}
 }
  
-void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AFoundation::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (!IsSet && OtherComp -> GetName() == "BoxComponent") {
 		Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
@@ -108,63 +108,63 @@ void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActo
 	}
 }
 
-void AFloor::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AFoundation::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Right = true;
 	}
 }
  
-void AFloor::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AFoundation::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Right = false;
 	}
 }
 
-void AFloor::LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AFoundation::LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Low = true;
 	}
 }
  
-void AFloor::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AFoundation::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Low = false;
 	}
 }
 
-void AFloor::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AFoundation::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Left = true;
 	}
 }
  
-void AFloor::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AFoundation::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Left = false;
 	}
 }
 
-void AFloor::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AFoundation::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Up = true;
 	}
 }
  
-void AFloor::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AFoundation::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Up = false;
 	}
 }
 
-bool AFloor::Save(FString Name, FString CompName)
+bool AFoundation::Save(FString Name, FString CompName)
 {
 	if (!IsSet && Str::IsBuildContain(Name) && Name != GetName() && Str::IsSideContain(CompName)) {
 		IsAttach = true;
@@ -179,7 +179,7 @@ bool AFloor::Save(FString Name, FString CompName)
 	return false;
 }
 
-bool AFloor::Remove(FString Name, FString CompName)
+bool AFoundation::Remove(FString Name, FString CompName)
 {
 	if (!IsSet && !BlockSideCache.IsEmpty() && Str::IsBuildContain(Name) && Str::IsSideContain(CompName)) {
 		IsAttach = false;

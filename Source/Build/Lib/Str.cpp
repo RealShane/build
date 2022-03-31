@@ -20,7 +20,7 @@ bool Str::IsSideContain(FString Value)
 
 bool Str::IsBuildContain(FString Value)
 {
-	if (IsContain(Value, "Floor")) {
+	if (IsContain(Value, "Foundation")) {
 		return true;
 	}else if (IsContain(Value, "Floor")) {
 		return true;

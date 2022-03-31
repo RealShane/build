@@ -4,9 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "GameFramework/Actor.h"
-#include "Floor.generated.h"
+#include "Foundation.generated.h"
 
 USTRUCT(BlueprintType)
 struct FBlockActor
@@ -22,13 +21,13 @@ struct FBlockActor
 };
 
 UCLASS()
-class BUILD_API AFloor : public AActor
+class BUILD_API AFoundation : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AFloor();
+	AFoundation();
 
 protected:
 	// Called when the game starts or when spawned

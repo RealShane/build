@@ -42,8 +42,8 @@ void UBuildSystem::SetPlayer(AMainCharacter* Value)
 
 bool UBuildSystem::Building()
 {
-	if (BuildType == "Floor") {
-		return this -> FloorBuild();
+	if (BuildType == "Foundation") {
+		return this -> FoundationBuild();
 	}
 	return false;
 }
@@ -53,8 +53,8 @@ bool UBuildSystem::Building()
  */
 void UBuildSystem::SetBuild(FString Type)
 {
-	if (Type == "Floor") {
-		this -> Floor();
+	if (Type == "Foundation") {
+		this -> Foundation();
 	}
 }
 
@@ -63,18 +63,18 @@ void UBuildSystem::SetBuild(FString Type)
  */
 void UBuildSystem::BlurAttach()
 {
-	if (BuildType == "Floor") {
-		this -> FloorBlurAttach();
+	if (BuildType == "Foundation") {
+		this -> FoundationBlurAttach();
 	}
 }
 
 bool UBuildSystem::IsCollision()
 {
 	FHitResult OutHit;
-	FVector Start = Cast<AFloor>(BuildItem) -> GetActorLocation();
+	FVector Start = Cast<AFoundation>(BuildItem) -> GetActorLocation();
 	Start.X += 100;
 	Start.Y += 50;
-	FVector ForwardVector = Cast<AFloor>(BuildItem) -> GetActorForwardVector();
+	FVector ForwardVector = Cast<AFoundation>(BuildItem) -> GetActorForwardVector();
 	FVector End = ((ForwardVector * 500.f) + Start);
 	// FTransform MyTransform = FTransform(FVector(-500, 50, 400));
 	// FBox MyBox = FBox(FVector(0, 0, 0), FVector(400, 400, 20));
@@ -89,20 +89,20 @@ bool UBuildSystem::IsCollision()
 }
 
 
-void UBuildSystem::Floor()
+void UBuildSystem::Foundation()
 {
 	if (BuildItem == nullptr) {
-		BuildItem = GetWorld() -> SpawnActor<AFloor>(FVector(0, 0, 10000), FRotator(0));
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
-		BuildType = "Floor";
+		BuildItem = GetWorld() -> SpawnActor<AFoundation>(FVector(0, 0, 10000), FRotator(0));
+		Cast<AFoundation>(BuildItem) -> SetCollision(ECollisionEnabled::QueryOnly);
+		BuildType = "Foundation";
 	}else {
-		GetWorld() -> DestroyActor(Cast<AFloor>(BuildItem));
+		GetWorld() -> DestroyActor(Cast<AFoundation>(BuildItem));
 		BuildItem = nullptr;
 		BuildType = nullptr;
 	}
 }
 
-void UBuildSystem::FloorBlurAttach()
+void UBuildSystem::FoundationBlurAttach()
 {
 	if (BuildItem != nullptr) {
 		//视角旋转的Yaw值是极坐标ρ
@@ -126,8 +126,8 @@ void UBuildSystem::FloorBlurAttach()
 		float Y = FMath::Sin(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z - 100) + FVector(X, Y, 0);
 		// 检测阻挡建筑是否可以附着
-		FString BlockActorName = Cast<AFloor>(BuildItem) -> BlockActorName;
-		if (Cast<AFloor>(BuildItem) -> IsAttach) {
+		FString BlockActorName = Cast<AFoundation>(BuildItem) -> BlockActorName;
+		if (Cast<AFoundation>(BuildItem) -> IsAttach) {
 				FVector BlockActorLocation = FVector::DownVector;
 				FRotator BlockActorRotation = FRotator::ZeroRotator;
 				int i = 0;
@@ -139,8 +139,8 @@ void UBuildSystem::FloorBlurAttach()
 					}
 				}
 				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
-					FString AttachSide = Cast<AFloor>(BuildItem) -> BlockActorSide;
-					float Side = Cast<AFloor>(BuildItem) -> HalfXY * 2;
+					FString AttachSide = Cast<AFoundation>(BuildItem) -> BlockActorSide;
+					float Side = Cast<AFoundation>(BuildItem) -> HalfXY * 2;
 					if (AttachSide == "Right" && !Saving[i].Right) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
@@ -167,32 +167,32 @@ void UBuildSystem::FloorBlurAttach()
 					}
 				}
 		}
-		Cast<AFloor>(BuildItem) -> SetActorRotation(FRotator(0, BuildRotation, 0));
-		Cast<AFloor>(BuildItem) -> SetActorLocation(BuildLocation);
+		Cast<AFoundation>(BuildItem) -> SetActorRotation(FRotator(0, BuildRotation, 0));
+		Cast<AFoundation>(BuildItem) -> SetActorLocation(BuildLocation);
 	}
 }
 
-bool UBuildSystem::FloorBuild()
+bool UBuildSystem::FoundationBuild()
 {
 	if (BuildItem != nullptr) {
-		if (Cast<AFloor>(BuildItem) -> IsBlock) {
+		if (Cast<AFoundation>(BuildItem) -> IsBlock) {
 			//TODO UI显示被阻挡无法放置
 			Lib::echo(TEXT("被阻挡无法放置！"));
 			return false;
 		}
-		Cast<AFloor>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
-		Cast<AFloor>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-		Cast<AFloor>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
-		Cast<AFloor>(BuildItem) -> IsSet = true;
+		Cast<AFoundation>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
+		Cast<AFoundation>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
+		Cast<AFoundation>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
+		Cast<AFoundation>(BuildItem) -> IsSet = true;
 		FBuildCache Cache;
 		Cache.HealthPoints = 100;
-		Cache.Type = "Floor";
+		Cache.Type = "Foundation";
 		Cache.Building = BuildItem;
 		Cache.Location = BuildLocation;
-		Cache.Rotation = Cast<AFloor>(BuildItem) -> GetActorRotation();
-		if (Cast<AFloor>(BuildItem) -> IsAttach) {
+		Cache.Rotation = Cast<AFoundation>(BuildItem) -> GetActorRotation();
+		if (Cast<AFoundation>(BuildItem) -> IsAttach) {
 			for (int i = 0; i < Saving.Num(); i++) {
-				for (FBlockActor Item : Cast<AFloor>(BuildItem) -> BlockSideCache) {
+				for (FBlockActor Item : Cast<AFoundation>(BuildItem) -> BlockSideCache) {
 					if (Saving[i].Building -> GetName() == Item.Name) {
 						if (Item.Side == "Right") {
 							Saving[i].Right = true;
@@ -206,10 +206,10 @@ bool UBuildSystem::FloorBuild()
 					}
 				}
 			}
-			Cache.Right = Cast<AFloor>(BuildItem) -> Right;
-			Cache.Low = Cast<AFloor>(BuildItem) -> Low;
-			Cache.Left = Cast<AFloor>(BuildItem) -> Left;
-			Cache.Up = Cast<AFloor>(BuildItem) -> Up;
+			Cache.Right = Cast<AFoundation>(BuildItem) -> Right;
+			Cache.Low = Cast<AFoundation>(BuildItem) -> Low;
+			Cache.Left = Cast<AFoundation>(BuildItem) -> Left;
+			Cache.Up = Cast<AFoundation>(BuildItem) -> Up;
 		}
 		Saving.Emplace(Cache);
 		BuildItem = nullptr;

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Build/Character/MainCharacter.h"
-#include "Floor.h"
+#include "Foundation.h"
 #include "BuildSystem.generated.h"
 
 USTRUCT(BlueprintType)
@@ -87,7 +87,7 @@ public:
 	bool IsCollision();
 
 
-	void Floor();
-	void FloorBlurAttach();
-	bool FloorBuild();
+	void Foundation();
+	void FoundationBlurAttach();
+	bool FoundationBuild();
 };
