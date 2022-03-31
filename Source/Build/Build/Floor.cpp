@@ -13,7 +13,7 @@ AFloor::AFloor()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent -> InitBoxExtent(FVector(190, 190, HalfZ));
+	BoxComponent -> InitBoxExtent(FVector(190, 190, 40));
 	SetRootComponent(BoxComponent);
 	
 	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Right"));
@@ -67,6 +67,9 @@ void AFloor::BeginPlay()
 void AFloor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (!IsSet) {
+		Lib::echo("bool : " + this -> GetName() + "---" + FString::SanitizeFloat(IsBlock));
+	}
 }
 
 void AFloor::SetCollision(ECollisionEnabled::Type Type)
@@ -88,16 +91,20 @@ void AFloor::SetMaterial(FString Value)
 void AFloor::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!IsSet && OtherComp -> GetName() == "BoxComponent") {
-		OverlapActorName = OtherActor -> GetName();
+		Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+		OverlapCount += 1;
 		IsBlock = true;
 	}
 }
  
 void AFloor::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (!IsSet && OtherComp -> GetName() == "BoxComponent" && OtherActor -> GetName() == OverlapActorName) {
-		OverlapActorName = nullptr;
-		IsBlock = false;
+	if (!IsSet && OtherComp -> GetName() == "BoxComponent") {
+		Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+		OverlapCount -= 1;
+		if (OverlapCount <= 0) {
+			IsBlock = false;
+		}
 	}
 }
 

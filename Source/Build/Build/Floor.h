@@ -80,7 +80,7 @@ public:
 	bool IsAttach = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString OverlapActorName;
+	int OverlapCount = 0;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BlockActorName;
