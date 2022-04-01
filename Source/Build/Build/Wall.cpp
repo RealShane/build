@@ -19,8 +19,8 @@ AWall::AWall()
 	RightSideBoxComponent -> SetupAttachment(RootComponent);
 
 	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Low"));
-	LowSideBoxComponent -> InitBoxExtent(FVector(5, 100, 10));
-	LowSideBoxComponent -> SetRelativeLocation(FVector(0, 0, -200));
+	LowSideBoxComponent -> InitBoxExtent(FVector(5, 100, 100));
+	LowSideBoxComponent -> SetRelativeLocation(FVector(0, 0, -110));
 	LowSideBoxComponent -> SetupAttachment(RootComponent);
 	
 	LeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Left"));
@@ -89,7 +89,7 @@ void AWall::SetMaterial(FString Value)
 
 void AWall::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+	// Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
 	if (!IsSet && Str::IsOverlapContain(OtherComp -> GetName())) {
 		OverlapCount += 1;
 		IsBlock = true;
@@ -98,7 +98,7 @@ void AWall::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
  
 void AWall::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+	// Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
 	if (!IsSet && Str::IsOverlapContain(OtherComp -> GetName())) {
 		OverlapCount -= 1;
 		if (OverlapCount <= 0) {
@@ -109,15 +109,19 @@ void AWall::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor
 
 void AWall::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Right = true;
+	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
+		if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+			Right = true;
+		}
 	}
 }
  
 void AWall::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Right = false;
+	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
+		if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+			Right = false;
+		}
 	}
 }
 
@@ -137,29 +141,37 @@ void AWall::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActo
 
 void AWall::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Left = true;
+	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
+		if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+			Left = true;
+		}
 	}
 }
  
 void AWall::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Left = false;
+	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
+		if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+			Left = false;
+		}
 	}
 }
 
 void AWall::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Up = true;
+	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
+		if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+			Up = true;
+		}
 	}
 }
  
 void AWall::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Up = false;
+	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
+		if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+			Up = false;
+		}
 	}
 }
 

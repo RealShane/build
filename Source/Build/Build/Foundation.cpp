@@ -87,7 +87,6 @@ void AFoundation::SetMaterial(FString Value)
 
 void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
 	if (!IsSet && Str::IsOverlapContain(OtherComp -> GetName())) {
 		OverlapCount += 1;
 		IsBlock = true;
@@ -96,7 +95,6 @@ void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
  
 void AFoundation::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
 	if (!IsSet && Str::IsOverlapContain(OtherComp -> GetName())) {
 		OverlapCount -= 1;
 		if (OverlapCount <= 0) {

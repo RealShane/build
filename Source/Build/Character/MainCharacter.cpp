@@ -90,7 +90,7 @@ void AMainCharacter::ThirdPerson()
 	bUseControllerRotationRoll = false;
 	GetCharacterMovement() -> RotationRate = FRotator(0, 540, 0);
 	SpringArmComponent -> SetupAttachment(RootComponent);
-	SpringArmComponent -> SetRelativeLocation(FVector(0, 0, 100));
+	SpringArmComponent -> SetRelativeLocation(FVector(0, 0, 80));
 	SpringArmComponent -> SetRelativeRotation(FRotator(-15, 0, 0));
 	SpringArmComponent -> bUsePawnControlRotation = true;
 	CameraComponent -> SetupAttachment(SpringArmComponent);
