@@ -5,20 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
+#include "Build/Lib/Lib.h"
+#include "Build/Lib/Str.h"
+#include "Struct/BlockActor.h"
 #include "Foundation.generated.h"
-
-USTRUCT(BlueprintType)
-struct FBlockActor
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Name;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Side;
-	
-};
 
 UCLASS()
 class BUILD_API AFoundation : public AActor

@@ -22,7 +22,22 @@ bool Str::IsBuildContain(FString Value)
 {
 	if (IsContain(Value, "Foundation")) {
 		return true;
+	}else if (IsContain(Value, "Wall")) {
+		return true;
 	}else if (IsContain(Value, "Floor")) {
+		return true;
+	}else {
+		return false;
+	}
+}
+
+bool Str::IsOverlapContain(FString Value)
+{
+	if (IsContain(Value, "BoxComponent")) {
+		return true;
+	}else if (IsContain(Value, "CollisionCylinder")) {
+		return true;
+	}else if (IsContain(Value, "")) {
 		return true;
 	}else {
 		return false;

@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Build/Lib/Lib.h"
 #include "MainCharacter.generated.h"
 
 UCLASS()

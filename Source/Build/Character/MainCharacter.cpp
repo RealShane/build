@@ -3,8 +3,6 @@
 
 #include "MainCharacter.h"
 
-#include "Build/Lib/Lib.h"
-
 // Sets default values
 AMainCharacter::AMainCharacter()
 {
@@ -42,7 +40,7 @@ void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	this -> AnimPlay(Idle, true);
-	SetActorLocation(FVector(0, 0, 2000));
+	SetActorLocation(FVector(4000, 4000, 1000));
 	GetCharacterMovement() -> NavAgentProps.bCanCrouch = true;
 	SpringArmComponent -> TargetArmLength = 600;
 }

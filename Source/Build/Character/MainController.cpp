@@ -2,7 +2,6 @@
 
 
 #include "MainController.h"
-#include "Build/Lib/Lib.h"
 
 AMainController::AMainController()
 {
@@ -97,20 +96,18 @@ void AMainController::PressOne()
 {
 	BuildType = "Foundation";
 	BuildSystem -> SetBuild(BuildType);
-	IsBuildMode = !IsBuildMode;
 }
 
 void AMainController::PressTwo()
 {
-	Lib::echo("-------------------------");
+	BuildType = "Wall";
+	BuildSystem -> SetBuild(BuildType);
 }
 
 void AMainController::MouseLeft()
 {
-	if (IsBuildMode) {
-		if (BuildSystem -> Building()) {
-			IsBuildMode = false;
-		}
+	if (BuildSystem -> IsBuildMode()) {
+		BuildSystem -> Building();
 	}
 }
 
@@ -150,8 +147,7 @@ void AMainController::MouseWheelDown()
 
 void AMainController::MouseRight()
 {
-	if (IsBuildMode) {
-		IsBuildMode = false;
+	if (BuildSystem -> IsBuildMode()) {
 		BuildSystem -> SetBuild(BuildType);
 	}
 }

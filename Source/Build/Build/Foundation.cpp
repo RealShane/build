@@ -3,9 +3,6 @@
 
 #include "Foundation.h"
 
-#include "Build/Lib/Lib.h"
-#include "Build/Lib/Str.h"
-
 // Sets default values
 AFoundation::AFoundation()
 {
@@ -13,7 +10,7 @@ AFoundation::AFoundation()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent -> InitBoxExtent(FVector(190, 190, 40));
+	BoxComponent -> InitBoxExtent(FVector(190, 190, 30));
 	SetRootComponent(BoxComponent);
 	
 	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Right"));
@@ -68,7 +65,7 @@ void AFoundation::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (!IsSet) {
-		Lib::echo("bool : " + this -> GetName() + "---" + FString::SanitizeFloat(IsBlock));
+		// Lib::echo("bool : " + this -> GetName() + "---" + FString::SanitizeFloat(IsBlock));
 	}
 }
 
@@ -90,8 +87,8 @@ void AFoundation::SetMaterial(FString Value)
 
 void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!IsSet && OtherComp -> GetName() == "BoxComponent") {
-		Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+	Lib::echo("begin : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+	if (!IsSet && Str::IsOverlapContain(OtherComp -> GetName())) {
 		OverlapCount += 1;
 		IsBlock = true;
 	}
@@ -99,8 +96,8 @@ void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
  
 void AFoundation::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (!IsSet && OtherComp -> GetName() == "BoxComponent") {
-		Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+	Lib::echo("end : " + OtherActor -> GetName() + "-" + OtherComp -> GetName());
+	if (!IsSet && Str::IsOverlapContain(OtherComp -> GetName())) {
 		OverlapCount -= 1;
 		if (OverlapCount <= 0) {
 			IsBlock = false;

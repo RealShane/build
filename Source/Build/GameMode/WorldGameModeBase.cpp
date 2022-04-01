@@ -3,8 +3,6 @@
 
 #include "WorldGameModeBase.h"
 
-#include "Build/Lib/Lib.h"
-
 AWorldGameModeBase::AWorldGameModeBase()
 {
 	PlayerControllerClass = AMainController::StaticClass();

@@ -6,44 +6,11 @@
 #include "Components/ActorComponent.h"
 #include "Build/Character/MainCharacter.h"
 #include "Foundation.h"
+#include "Wall.h"
+#include "Build/Lib/Lib.h"
+#include "Struct/BuildCache.h"
 #include "BuildSystem.generated.h"
 
-USTRUCT(BlueprintType)
-struct FBuildCache
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float HealthPoints;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Type;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Token;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UObject* Building;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector Location;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FRotator Rotation;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Right = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Low = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Left = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Up = false;
-	
-};
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BUILD_API UBuildSystem : public UActorComponent
@@ -82,12 +49,23 @@ public:
 
 	void SetPlayer(AMainCharacter* Value);
 	void SetBuild(FString Type);
+	void UnSetBuild();
 	void BlurAttach();
 	bool Building();
-	bool IsCollision();
+	bool IsBuildMode();
 
 
+	/**
+	 * 地基
+	 */
 	void Foundation();
 	void FoundationBlurAttach();
 	bool FoundationBuild();
+
+	/**
+	 * 墙
+	 */
+	void Wall();
+	void WallBlurAttach();
+	bool WallBuild();
 };

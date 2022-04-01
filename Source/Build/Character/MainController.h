@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Build/Lib/Lib.h"
 #include "MainController.generated.h"
 
 UCLASS()
@@ -51,9 +52,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBuildSystem* BuildSystem;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsBuildMode = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BuildType;
