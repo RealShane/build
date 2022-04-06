@@ -238,7 +238,8 @@ void UBuildSystem::WallBlurAttach()
 		FVector MainLocation = Player -> GetActorLocation();
 		float BuildRotation = ViewRotation.Yaw;
 		//ρ值有一个变化区间可以使建筑前后移动，这个变化区间值的求出应当使用人物与摄像机的夹角 z*tan
-		float Angle = 90 - (360 - ViewRotation.Pitch);
+		float OriginAngle = 90 - (360 - ViewRotation.Pitch);
+		float Angle = OriginAngle;
 		if (Angle <= 0) {
 			Angle = 89;
 		}
@@ -252,25 +253,34 @@ void UBuildSystem::WallBlurAttach()
 		 */
 		float X = FMath::Cos(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
 		float Y = FMath::Sin(FMath::DegreesToRadians(ViewRotation.Yaw)) * BuildDistance;
-		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z) + FVector(X, Y, 0);
+		float Z = 0;
+		if (OriginAngle < -180 && OriginAngle > -270) {
+			Z = FMath::Tan(FMath::DegreesToRadians(OriginAngle + 270)) * MainLocation.Z;
+			if (Z > 1000) {
+				Z = 1000;
+			}
+			X = FMath::Cos(FMath::DegreesToRadians(ViewRotation.Yaw)) * (1001 - Z);
+			Y = FMath::Sin(FMath::DegreesToRadians(ViewRotation.Yaw)) * (1001 - Z);
+		}
+		BuildLocation = FVector(MainLocation.X, MainLocation.Y, MainLocation.Z) + FVector(X, Y, Z);
 		// 检测阻挡建筑是否可以附着
 		if (Cast<AWall>(BuildItem) -> IsAttach) {
-			FString BlockActorName = Cast<AWall>(BuildItem) -> BlockActorName;
+			FString BlockFoundationName = Cast<AWall>(BuildItem) -> BlockFoundationName;
+			FString BlockWallName = Cast<AWall>(BuildItem) -> BlockWallName;
 			FVector BlockActorLocation = FVector::DownVector;
 			FRotator BlockActorRotation = FRotator::ZeroRotator;
-			int i = 0;
-			for(; i < Saving.Num(); i++) {
-				if (BlockActorName == Saving[i].Building -> GetName()) {
-					BlockActorLocation = Saving[i].Location;
-					BlockActorRotation = Saving[i].Rotation;
-					break;
+			float Side = Cast<AWall>(BuildItem) -> HalfYZ;
+			if (!BlockFoundationName.IsEmpty()) {
+				int i = 0;
+				for(; i < Saving.Num(); i++) {
+					if (BlockFoundationName == Saving[i].Building -> GetName()) {
+						BlockActorLocation = Saving[i].Location;
+						BlockActorRotation = Saving[i].Rotation;
+						break;
+					}
 				}
-			}
-			
-			if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
-				FString AttachSide = Cast<AWall>(BuildItem) -> BlockActorSide;
-				if (Saving[i].Type == "Foundation") {
-					float Side = Cast<AWall>(BuildItem) -> HalfYZ; 
+				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+					FString AttachSide = Cast<AWall>(BuildItem) -> BlockFoundationSide;
 					if (AttachSide == "Right" && !Saving[i].WallRight) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
@@ -296,10 +306,44 @@ void UBuildSystem::WallBlurAttach()
 						BuildRotation = BlockActorRotation.Yaw + 360;
 					}
 				}
-				if (Saving[i].Type == "Wall") {
-					
+			}
+			
+			if (BlockFoundationName.IsEmpty() && !BlockWallName.IsEmpty()) {
+				int i = 0;
+				for(; i < Saving.Num(); i++) {
+					if (BlockWallName == Saving[i].Building -> GetName()) {
+						BlockActorLocation = Saving[i].Location;
+						BlockActorRotation = Saving[i].Rotation;
+						break;
+					}
+				}
+				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+					FString AttachSide = Cast<AWall>(BuildItem) -> BlockWallSide;
+					if (AttachSide == "Right" && !Saving[i].Right) {
+						Lib::echo("Name : " + BlockWallName + " --- Right");
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+					}
+					if (AttachSide == "Low" && !Saving[i].Low) {
+						Lib::echo("Name : " + BlockWallName + " --- Low");
+						BuildLocation = BlockActorLocation + FVector(0, 0, -Side * 2);
+					}
+					if (AttachSide == "Left" && !Saving[i].Left) {
+						Lib::echo("Name : " + BlockWallName + " --- Left");
+						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
+						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
+						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+					}
+					if (AttachSide == "Up" && !Saving[i].Up) {
+						Lib::echo("Name : " + BlockWallName + " --- Up");
+						BuildLocation = BlockActorLocation + FVector(0, 0, Side * 2);
+					}
+					BuildRotation = BlockActorRotation.Yaw;
 				}
 			}
+			
+			
 		}
 		Cast<AWall>(BuildItem) -> SetActorRotation(FRotator(0, BuildRotation, 0));
 		Cast<AWall>(BuildItem) -> SetActorLocation(BuildLocation);
@@ -361,6 +405,7 @@ bool UBuildSystem::WallBuild()
 		Cache.Left = Cast<AWall>(BuildItem) -> Left;
 		Cache.Up = Cast<AWall>(BuildItem) -> Up;
 		Saving.Emplace(Cache);
+		BuildType = nullptr;
 		BuildItem = nullptr;
 		return true;
 	}

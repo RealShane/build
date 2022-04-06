@@ -73,10 +73,16 @@ public:
 	int OverlapCount = 0;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockActorName;
+	FString BlockFoundationName;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockActorSide;
+	FString BlockFoundationSide;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockWallName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockWallSide;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TArray<FBlockActor> BlockSideCache;

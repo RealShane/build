@@ -109,19 +109,15 @@ void AWall::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor
 
 void AWall::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
-		if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-			Right = true;
-		}
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Right = true;
 	}
 }
  
 void AWall::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
-		if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-			Right = false;
-		}
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Right = false;
 	}
 }
 
@@ -141,37 +137,29 @@ void AWall::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActo
 
 void AWall::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
-		if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-			Left = true;
-		}
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Left = true;
 	}
 }
  
 void AWall::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
-		if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-			Left = false;
-		}
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Left = false;
 	}
 }
 
 void AWall::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
-		if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-			Up = true;
-		}
+	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Up = true;
 	}
 }
  
 void AWall::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Str::IsContain(OtherActor -> GetName(), "Wall")) {
-		if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-			Up = false;
-		}
+	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
+		Up = false;
 	}
 }
 
@@ -179,8 +167,14 @@ bool AWall::Save(FString Name, FString CompName)
 {
 	if (!IsSet && Str::IsBuildContain(Name) && Name != GetName() && Str::IsSideContain(CompName)) {
 		IsAttach = true;
-		BlockActorName = Name;
-		BlockActorSide = CompName;
+		if (Str::IsContain(Name, "Foundation")) {
+			BlockFoundationName = Name;
+			BlockFoundationSide = CompName;
+		}
+		if (Str::IsContain(Name, "Wall")) {
+			BlockWallName = Name;
+			BlockWallSide = CompName;
+		}
 		FBlockActor BlockActor;
 		BlockActor.Name = Name;
 		BlockActor.Side = CompName;
@@ -194,8 +188,14 @@ bool AWall::Remove(FString Name, FString CompName)
 {
 	if (!IsSet && !BlockSideCache.IsEmpty() && Str::IsBuildContain(Name) && Str::IsSideContain(CompName)) {
 		IsAttach = false;
-		BlockActorName = nullptr;
-		BlockActorSide = nullptr;
+		if (Str::IsContain(Name, "Foundation")) {
+			BlockFoundationName = nullptr;
+			BlockFoundationSide = nullptr;
+		}
+		if (Str::IsContain(Name, "Wall")) {
+			BlockWallName = nullptr;
+			BlockWallSide = nullptr;
+		}
 		for (int i = 0; i < BlockSideCache.Num(); i++) {
 			if (BlockSideCache[i].Name == Name && BlockSideCache[i].Side == CompName) {
 				BlockSideCache.RemoveAt(i);
