@@ -34,13 +34,7 @@ public:
 	UBoxComponent* BoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UBoxComponent* RightSideBoxComponent;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* LowSideBoxComponent;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UBoxComponent* LeftSideBoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* UpSideBoxComponent;
@@ -88,13 +82,7 @@ public:
 	TArray<FBlockActor> BlockSideCache;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Right = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Low = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Left = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Up = false;
@@ -108,24 +96,12 @@ public:
  
 	UFUNCTION()
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
-	void RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
- 
-	UFUNCTION()
-	void RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
+	
 	UFUNCTION()
 	void LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
  
 	UFUNCTION()
 	void LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
-	void LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
- 
-	UFUNCTION()
-	void LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

@@ -319,27 +319,14 @@ void UBuildSystem::WallBlurAttach()
 				}
 				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
 					FString AttachSide = Cast<AWall>(BuildItem) -> BlockWallSide;
-					if (AttachSide == "Right" && !Saving[i].Right) {
-						Lib::echo("Name : " + BlockWallName + " --- Right");
-						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
-						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
-						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
-					}
 					if (AttachSide == "Low" && !Saving[i].Low) {
-						Lib::echo("Name : " + BlockWallName + " --- Low");
 						BuildLocation = BlockActorLocation + FVector(0, 0, -Side * 2);
-					}
-					if (AttachSide == "Left" && !Saving[i].Left) {
-						Lib::echo("Name : " + BlockWallName + " --- Left");
-						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
-						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
-						BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
+						BuildRotation = BlockActorRotation.Yaw;
 					}
 					if (AttachSide == "Up" && !Saving[i].Up) {
-						Lib::echo("Name : " + BlockWallName + " --- Up");
 						BuildLocation = BlockActorLocation + FVector(0, 0, Side * 2);
+						BuildRotation = BlockActorRotation.Yaw;
 					}
-					BuildRotation = BlockActorRotation.Yaw;
 				}
 			}
 			
@@ -387,12 +374,8 @@ bool UBuildSystem::WallBuild()
 							Saving[i].WallUp = true;
 						}
 					}else {
-						if (Item.Side == "Right") {
-							Saving[i].Right = true;
-						}else if (Item.Side == "Low") {
+						if (Item.Side == "Low") {
 							Saving[i].Low = true;
-						}else if (Item.Side == "Left") {
-							Saving[i].Left = true;
 						}else if (Item.Side == "Up") {
 							Saving[i].Up = true;
 						}
@@ -400,9 +383,7 @@ bool UBuildSystem::WallBuild()
 				}
 			}
 		}
-		Cache.Right = Cast<AWall>(BuildItem) -> Right;
 		Cache.Low = Cast<AWall>(BuildItem) -> Low;
-		Cache.Left = Cast<AWall>(BuildItem) -> Left;
 		Cache.Up = Cast<AWall>(BuildItem) -> Up;
 		Saving.Emplace(Cache);
 		BuildType = nullptr;

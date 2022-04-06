@@ -12,25 +12,15 @@ AWall::AWall()
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
 	BoxComponent -> InitBoxExtent(FVector(5, 190, 190));
 	SetRootComponent(BoxComponent);
-	
-	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Right"));
-	RightSideBoxComponent -> InitBoxExtent(FVector(5, 10, 100));
-	RightSideBoxComponent -> SetRelativeLocation(FVector(0, 200, 0));
-	RightSideBoxComponent -> SetupAttachment(RootComponent);
 
 	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Low"));
-	LowSideBoxComponent -> InitBoxExtent(FVector(5, 100, 100));
-	LowSideBoxComponent -> SetRelativeLocation(FVector(0, 0, -110));
+	LowSideBoxComponent -> InitBoxExtent(FVector(10, 150, 85));
+	LowSideBoxComponent -> SetRelativeLocation(FVector(0, 0, -125));
 	LowSideBoxComponent -> SetupAttachment(RootComponent);
 	
-	LeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Left"));
-	LeftSideBoxComponent -> InitBoxExtent(FVector(5, 10, 100));
-	LeftSideBoxComponent -> SetRelativeLocation(FVector(0, -200, 0));
-	LeftSideBoxComponent -> SetupAttachment(RootComponent);
-	
 	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Up"));
-	UpSideBoxComponent -> InitBoxExtent(FVector(5, 100, 10));
-	UpSideBoxComponent -> SetRelativeLocation(FVector(0, 0, 200));
+	UpSideBoxComponent -> InitBoxExtent(FVector(10, 150, 85));
+	UpSideBoxComponent -> SetRelativeLocation(FVector(0, 0, 125));
 	UpSideBoxComponent -> SetupAttachment(RootComponent);
 
 
@@ -51,12 +41,8 @@ void AWall::BeginPlay()
 	BoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AWall::OnOverlapBegin);
 	BoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AWall::OnOverlapEnd);
 
-	RightSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AWall::RightOverlapBegin);
-	RightSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AWall::RightOverlapEnd);
 	LowSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AWall::LowOverlapBegin);
 	LowSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AWall::LowOverlapEnd);
-	LeftSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AWall::LeftOverlapBegin);
-	LeftSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AWall::LeftOverlapEnd);
 	UpSideBoxComponent -> OnComponentBeginOverlap.AddDynamic(this, &AWall::UpOverlapBegin);
 	UpSideBoxComponent -> OnComponentEndOverlap.AddDynamic(this, &AWall::UpOverlapEnd);
 }
@@ -66,7 +52,7 @@ void AWall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (!IsSet) {
-		// Lib::echo("bool : " + this -> GetName() + "---" + FString::SanitizeFloat(IsBlock));
+		// Lib::echo("bool : " + FString::SanitizeFloat(BlockWallName.IsEmpty()));
 	}
 }
 
@@ -107,20 +93,6 @@ void AWall::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor
 	}
 }
 
-void AWall::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Right = true;
-	}
-}
- 
-void AWall::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Right = false;
-	}
-}
-
 void AWall::LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
@@ -132,20 +104,6 @@ void AWall::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActo
 {
 	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
 		Low = false;
-	}
-}
-
-void AWall::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Left = true;
-	}
-}
- 
-void AWall::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Left = false;
 	}
 }
 
@@ -171,7 +129,7 @@ bool AWall::Save(FString Name, FString CompName)
 			BlockFoundationName = Name;
 			BlockFoundationSide = CompName;
 		}
-		if (Str::IsContain(Name, "Wall")) {
+		if (Str::IsContain(Name, "Wall") && BlockWallName.IsEmpty()) {
 			BlockWallName = Name;
 			BlockWallSide = CompName;
 		}
@@ -192,7 +150,7 @@ bool AWall::Remove(FString Name, FString CompName)
 			BlockFoundationName = nullptr;
 			BlockFoundationSide = nullptr;
 		}
-		if (Str::IsContain(Name, "Wall")) {
+		if (Str::IsContain(Name, "Wall") && Name == BlockWallName) {
 			BlockWallName = nullptr;
 			BlockWallSide = nullptr;
 		}
