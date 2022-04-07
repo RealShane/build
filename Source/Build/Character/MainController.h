@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Build/Build/BuildSystem.h"
 #include "MainCharacter.h"
+#include "Build/Equips/Torch.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -56,11 +57,15 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BuildType;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	ATorch* Torch;
+
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void PressOne();
 	void PressTwo();
+	void PressZero();
 	void MouseLeft();
 	void MouseWheelUp();
 	void MouseWheelDown();

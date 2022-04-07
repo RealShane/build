@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/SpotLight.h"
 #include "GameFramework/Actor.h"
 #include "Torch.generated.h"
 
 UCLASS()
-class BUILD_API ATorch : public AActor
+class BUILD_API ATorch : public ALight
 {
 	GENERATED_BODY()
 
@@ -22,4 +23,10 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	USpotLightComponent* Light;
+
+	void On();
 };

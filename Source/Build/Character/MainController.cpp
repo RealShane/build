@@ -38,6 +38,7 @@ void AMainController::SetupInputComponent()
 	//数字1按键
 	InputComponent -> BindAction("One", IE_Pressed, this, &AMainController::PressOne);
 	InputComponent -> BindAction("Two", IE_Pressed, this, &AMainController::PressTwo);
+	InputComponent -> BindAction("Zero", IE_Pressed, this, &AMainController::PressZero);
 	//鼠标左右中键
 	InputComponent -> BindAction("MouseLeft", IE_Pressed, this, &AMainController::MouseLeft);
 	InputComponent -> BindAction("MouseWheelUp", IE_Pressed, this, &AMainController::MouseWheelUp);
@@ -102,6 +103,14 @@ void AMainController::PressTwo()
 {
 	BuildType = "Wall";
 	BuildSystem -> SetBuild(BuildType);
+}
+
+void AMainController::PressZero()
+{
+	Torch = GetWorld() -> SpawnActor<ATorch>(Main -> GetActorLocation(), FRotator(0));
+	FName Socket = "hand_r";
+	Torch -> AttachToActor(Main, FAttachmentTransformRules::KeepRelativeTransform, Socket);
+	Torch -> On();
 }
 
 void AMainController::MouseLeft()
