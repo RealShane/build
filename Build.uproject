@@ -26,10 +26,6 @@
 				"Mac",
 				"Linux"
 			]
-		},
-		{
-			"Name": "RiderSourceCodeAccess",
-			"Enabled": false
 		}
 	]
 }
