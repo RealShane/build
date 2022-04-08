@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/SpotLight.h"
 #include "GameFramework/Actor.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Torch.generated.h"
 
 UCLASS()
-class BUILD_API ATorch : public ALight
+class BUILD_API ATorch : public AActor
 {
 	GENERATED_BODY()
 
@@ -24,9 +25,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UStaticMeshComponent* StaticMeshComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	USpotLightComponent* Light;
+	UParticleSystemComponent* ParticleSystemComponent;
 
-	void On();
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UPointLightComponent* PointLightComponent;
+
+	void LightOn();
+
 };

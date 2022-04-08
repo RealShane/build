@@ -60,6 +60,9 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	ATorch* Torch;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool EquipsLock = false;
+
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);

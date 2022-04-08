@@ -107,10 +107,15 @@ void AMainController::PressTwo()
 
 void AMainController::PressZero()
 {
-	Torch = GetWorld() -> SpawnActor<ATorch>(Main -> GetActorLocation(), FRotator(0));
-	FName Socket = "hand_r";
-	Torch -> AttachToActor(Main, FAttachmentTransformRules::KeepRelativeTransform, Socket);
-	Torch -> On();
+	if (!EquipsLock) {
+		Torch = GetWorld() -> SpawnActor<ATorch>(Main -> GetActorLocation(), FRotator(0));
+		FName Socket = "hand_r";
+		Torch -> AttachToComponent(Main -> GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, Socket);
+		Torch -> LightOn();
+	}else {
+		GetWorld()->DestroyActor(Torch);
+	}
+	EquipsLock = !EquipsLock;
 }
 
 void AMainController::MouseLeft()
