@@ -45,7 +45,7 @@ public:
 	FString BuildType;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	TArray<FBuildCache> Saving;
+	TMap<FString, FBuildCache> Saving;
 
 	void SetPlayer(AMainCharacter* Value);
 	void SetBuild(FString Type);

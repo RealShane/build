@@ -12,6 +12,15 @@ struct FBlockActor
 	FString Name;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Side;
+	bool Right = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Low = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Left = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Up = false;
 	
 };

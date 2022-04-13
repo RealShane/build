@@ -79,7 +79,7 @@ public:
 	FString BlockWallSide;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	TArray<FBlockActor> BlockSideCache;
+	TMap<FString, FBlockActor> BlockSideCache;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Low = false;

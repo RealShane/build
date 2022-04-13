@@ -123,43 +123,51 @@ void AWall::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor
 
 bool AWall::Save(FString Name, FString CompName)
 {
-	if (!IsSet && Str::IsBuildContain(Name) && Name != GetName() && Str::IsSideContain(CompName)) {
-		IsAttach = true;
-		if (Str::IsContain(Name, "Foundation")) {
-			BlockFoundationName = Name;
-			BlockFoundationSide = CompName;
-		}
-		if (Str::IsContain(Name, "Wall") && BlockWallName.IsEmpty()) {
-			BlockWallName = Name;
-			BlockWallSide = CompName;
-		}
-		FBlockActor BlockActor;
+	if (IsSet || !Str::IsBuildContain(Name) || Name == GetName() || !Str::IsSideContain(CompName)) {
+		return false;
+	}
+	IsAttach = true;
+	if (Str::IsContain(Name, "Foundation")) {
+		BlockFoundationName = Name;
+		BlockFoundationSide = CompName;
+	}
+	if (Str::IsContain(Name, "Wall") && BlockWallName.IsEmpty()) {
+		BlockWallName = Name;
+		BlockWallSide = CompName;
+	}
+	FBlockActor BlockActor;
+	if (!BlockSideCache.Contains(Name)) {
 		BlockActor.Name = Name;
-		BlockActor.Side = CompName;
-		BlockSideCache.Emplace(BlockActor);
+		BlockSideCache.Emplace(Name, Lib::SetSide(CompName, BlockActor));
 		return true;
 	}
-	return false;
+	BlockActor = BlockSideCache[Name];
+	BlockSideCache.Emplace(Name, Lib::SetSide(CompName, BlockActor));
+	return true;
 }
 
 bool AWall::Remove(FString Name, FString CompName)
 {
-	if (!IsSet && !BlockSideCache.IsEmpty() && Str::IsBuildContain(Name) && Str::IsSideContain(CompName)) {
-		IsAttach = false;
-		if (Str::IsContain(Name, "Foundation")) {
-			BlockFoundationName = nullptr;
-			BlockFoundationSide = nullptr;
-		}
-		if (Str::IsContain(Name, "Wall") && Name == BlockWallName) {
-			BlockWallName = nullptr;
-			BlockWallSide = nullptr;
-		}
-		for (int i = 0; i < BlockSideCache.Num(); i++) {
-			if (BlockSideCache[i].Name == Name && BlockSideCache[i].Side == CompName) {
-				BlockSideCache.RemoveAt(i);
-			}
-		}
-		return true;
+	if (IsSet || BlockSideCache.IsEmpty() || !Str::IsBuildContain(Name) || !Str::IsSideContain(CompName)) {
+		return false;
 	}
-	return false;
+	IsAttach = false;
+	if (Str::IsContain(Name, "Foundation")) {
+		BlockFoundationName = nullptr;
+		BlockFoundationSide = nullptr;
+	}
+	if (Str::IsContain(Name, "Wall") && Name == BlockWallName) {
+		BlockWallName = nullptr;
+		BlockWallSide = nullptr;
+	}
+	if (!BlockSideCache.Contains(Name)) {
+		return false;
+	}
+	FBlockActor BlockActor = Lib::SetSide(CompName, BlockSideCache[Name], true);
+	if (!BlockActor.Right && !BlockActor.Low && !BlockActor.Left && !BlockActor.Up) {
+		BlockSideCache.Remove(Name);
+	}else {
+		BlockSideCache.Emplace(Name, BlockActor);
+	}
+	return true;
 }

@@ -124,38 +124,30 @@ void UBuildSystem::FoundationBlurAttach()
 		// 检测阻挡建筑是否可以附着
 		if (Cast<AFoundation>(BuildItem) -> IsAttach) {
 			FString BlockActorName = Cast<AFoundation>(BuildItem) -> BlockActorName;
-			FVector BlockActorLocation = FVector::DownVector;
-			FRotator BlockActorRotation = FRotator::ZeroRotator;
-			int i = 0;
-			for(; i < Saving.Num(); i++) {
-				if (BlockActorName == Saving[i].Building -> GetName()) {
-					BlockActorLocation = Saving[i].Location;
-					BlockActorRotation = Saving[i].Rotation;
-					break;
-				}
-			}
-			if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+			FVector BlockActorLocation = Saving[BlockActorName].Location;
+			FRotator BlockActorRotation = Saving[BlockActorName].Rotation;
+			if (!Player -> IsMoving) {
 				FString AttachSide = Cast<AFoundation>(BuildItem) -> BlockActorSide;
 				float Side = Cast<AFoundation>(BuildItem) -> HalfXY * 2;
-				if (AttachSide == "Right" && !Saving[i].Right) {
+				if (AttachSide == "Right" && !Saving[BlockActorName].Right) {
 					float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 					float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 					BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
 					BuildRotation = BlockActorRotation.Yaw;
 				}
-				if (AttachSide == "Low" && !Saving[i].Low) {
+				if (AttachSide == "Low" && !Saving[BlockActorName].Low) {
 					float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 					float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 					BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
 					BuildRotation = BlockActorRotation.Yaw;
 				}
-				if (AttachSide == "Left" && !Saving[i].Left) {
+				if (AttachSide == "Left" && !Saving[BlockActorName].Left) {
 					float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 					float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 					BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
 					BuildRotation = BlockActorRotation.Yaw;
 				}
-				if (AttachSide == "Up" && !Saving[i].Up) {
+				if (AttachSide == "Up" && !Saving[BlockActorName].Up) {
 					float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 					float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 					BuildLocation = BlockActorLocation + FVector(CalX, CalY, 0);
@@ -179,6 +171,7 @@ bool UBuildSystem::FoundationBuild()
 		Cast<AFoundation>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
 		Cast<AFoundation>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
 		Cast<AFoundation>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
+		Cast<AFoundation>(BuildItem) -> PrimaryActorTick.bCanEverTick = false;
 		Cast<AFoundation>(BuildItem) -> IsSet = true;
 		FBuildCache Cache;
 		Cache.HealthPoints = 100;
@@ -187,19 +180,18 @@ bool UBuildSystem::FoundationBuild()
 		Cache.Location = BuildLocation;
 		Cache.Rotation = Cast<AFoundation>(BuildItem) -> GetActorRotation();
 		if (Cast<AFoundation>(BuildItem) -> IsAttach) {
-			for (int i = 0; i < Saving.Num(); i++) {
-				for (FBlockActor Item : Cast<AFoundation>(BuildItem) -> BlockSideCache) {
-					if (Saving[i].Building -> GetName() == Item.Name) {
-						if (Item.Side == "Right") {
-							Saving[i].Right = true;
-						}else if (Item.Side == "Low") {
-							Saving[i].Low = true;
-						}else if (Item.Side == "Left") {
-							Saving[i].Left = true;
-						}else if (Item.Side == "Up") {
-							Saving[i].Up = true;
-						}
-					}
+			for (auto& Item : Cast<AFoundation>(BuildItem) -> BlockSideCache) {
+				if (Item.Value.Right) {
+					Saving[Item.Key].Right = Item.Value.Right;
+				}
+				if (Item.Value.Low) {
+					Saving[Item.Key].Low = Item.Value.Low;
+				}
+				if (Item.Value.Left) {
+					Saving[Item.Key].Left = Item.Value.Left;
+				}
+				if (Item.Value.Up) {
+					Saving[Item.Key].Up = Item.Value.Up;
 				}
 			}
 			Cache.Right = Cast<AFoundation>(BuildItem) -> Right;
@@ -207,7 +199,7 @@ bool UBuildSystem::FoundationBuild()
 			Cache.Left = Cast<AFoundation>(BuildItem) -> Left;
 			Cache.Up = Cast<AFoundation>(BuildItem) -> Up;
 		}
-		Saving.Emplace(Cache);
+		Saving.Emplace(Cast<AFoundation>(BuildItem) -> GetName(), Cache);
 		BuildType = nullptr;
 		BuildItem = nullptr;
 		return true;
@@ -271,35 +263,29 @@ void UBuildSystem::WallBlurAttach()
 			FRotator BlockActorRotation = FRotator::ZeroRotator;
 			float Side = Cast<AWall>(BuildItem) -> HalfYZ;
 			if (!BlockFoundationName.IsEmpty()) {
-				int i = 0;
-				for(; i < Saving.Num(); i++) {
-					if (BlockFoundationName == Saving[i].Building -> GetName()) {
-						BlockActorLocation = Saving[i].Location;
-						BlockActorRotation = Saving[i].Rotation;
-						break;
-					}
-				}
-				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+				BlockActorLocation = Saving[BlockFoundationName].Location;
+				BlockActorRotation = Saving[BlockFoundationName].Rotation;
+				if (!Player -> IsMoving) {
 					FString AttachSide = Cast<AWall>(BuildItem) -> BlockFoundationSide;
-					if (AttachSide == "Right" && !Saving[i].WallRight) {
+					if (AttachSide == "Right" && !Saving[BlockFoundationName].WallRight) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 90)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, Side + 30);
 						BuildRotation = BlockActorRotation.Yaw + 90;
 					}
-					if (AttachSide == "Low" && !Saving[i].WallLow) {
+					if (AttachSide == "Low" && !Saving[BlockFoundationName].WallLow) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 180)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, Side + 30);
 						BuildRotation = BlockActorRotation.Yaw + 180;
 					}
-					if (AttachSide == "Left" && !Saving[i].WallLeft) {
+					if (AttachSide == "Left" && !Saving[BlockFoundationName].WallLeft) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 270)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, Side + 30);
 						BuildRotation = BlockActorRotation.Yaw + 270;
 					}
-					if (AttachSide == "Up" && !Saving[i].WallUp) {
+					if (AttachSide == "Up" && !Saving[BlockFoundationName].WallUp) {
 						float CalX = FMath::Cos(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 						float CalY = FMath::Sin(FMath::DegreesToRadians(BlockActorRotation.Yaw + 360)) * Side;
 						BuildLocation = BlockActorLocation + FVector(CalX, CalY, Side + 30);
@@ -309,21 +295,15 @@ void UBuildSystem::WallBlurAttach()
 			}
 			
 			if (BlockFoundationName.IsEmpty() && !BlockWallName.IsEmpty()) {
-				int i = 0;
-				for(; i < Saving.Num(); i++) {
-					if (BlockWallName == Saving[i].Building -> GetName()) {
-						BlockActorLocation = Saving[i].Location;
-						BlockActorRotation = Saving[i].Rotation;
-						break;
-					}
-				}
-				if ((BlockActorLocation != FVector::DownVector) && (!Player -> IsMoving)) {
+				BlockActorLocation = Saving[BlockWallName].Location;
+				BlockActorRotation = Saving[BlockWallName].Rotation;
+				if (!Player -> IsMoving) {
 					FString AttachSide = Cast<AWall>(BuildItem) -> BlockWallSide;
-					if (AttachSide == "Low" && !Saving[i].Low) {
+					if (AttachSide == "Low" && !Saving[BlockWallName].Low) {
 						BuildLocation = BlockActorLocation + FVector(0, 0, -Side * 2);
 						BuildRotation = BlockActorRotation.Yaw;
 					}
-					if (AttachSide == "Up" && !Saving[i].Up) {
+					if (AttachSide == "Up" && !Saving[BlockWallName].Up) {
 						BuildLocation = BlockActorLocation + FVector(0, 0, Side * 2);
 						BuildRotation = BlockActorRotation.Yaw;
 					}
@@ -353,6 +333,7 @@ bool UBuildSystem::WallBuild()
 		Cast<AWall>(BuildItem) -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
 		Cast<AWall>(BuildItem) -> SetCollision(ECollisionEnabled::QueryAndPhysics);
 		Cast<AWall>(BuildItem) -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished.M_Wood_Floor_Walnut_Polished'"));
+		Cast<AWall>(BuildItem) -> PrimaryActorTick.bCanEverTick = false;
 		Cast<AWall>(BuildItem) -> IsSet = true;
 		FBuildCache Cache;
 		Cache.HealthPoints = 100;
@@ -360,32 +341,32 @@ bool UBuildSystem::WallBuild()
 		Cache.Building = BuildItem;
 		Cache.Location = BuildLocation;
 		Cache.Rotation = Cast<AWall>(BuildItem) -> GetActorRotation();
-		for (int i = 0; i < Saving.Num(); i++) {
-			for (FBlockActor Item : Cast<AWall>(BuildItem) -> BlockSideCache) {
-				if (Saving[i].Building -> GetName() == Item.Name) {
-					if (Saving[i].Type == "Foundation") {
-						if (Item.Side == "Right") {
-							Saving[i].WallRight = true;
-						}else if (Item.Side == "Low") {
-							Saving[i].WallLow = true;
-						}else if (Item.Side == "Left") {
-							Saving[i].WallLeft = true;
-						}else if (Item.Side == "Up") {
-							Saving[i].WallUp = true;
-						}
-					}else {
-						if (Item.Side == "Low") {
-							Saving[i].Low = true;
-						}else if (Item.Side == "Up") {
-							Saving[i].Up = true;
-						}
-					}
+		for (auto& Item : Cast<AWall>(BuildItem)->BlockSideCache) {
+			if (Saving[Item.Key].Type == "Foundation") {
+				if (Item.Value.Right) {
+					Saving[Item.Key].WallRight = Item.Value.Right;
+				}
+				if (Item.Value.Low) {
+					Saving[Item.Key].WallLow = Item.Value.Low;
+				}
+				if (Item.Value.Left) {
+					Saving[Item.Key].WallLeft = Item.Value.Left;
+				}
+				if (Item.Value.Up) {
+					Saving[Item.Key].WallUp = Item.Value.Up;
+				}
+			}else {
+				if (Item.Value.Low) {
+					Saving[Item.Key].Low = Item.Value.Low;
+				}
+				else if (Item.Value.Up) {
+					Saving[Item.Key].Up = Item.Value.Up;
 				}
 			}
 		}
 		Cache.Low = Cast<AWall>(BuildItem) -> Low;
 		Cache.Up = Cast<AWall>(BuildItem) -> Up;
-		Saving.Emplace(Cache);
+		Saving.Emplace(Cast<AWall>(BuildItem)->GetName(), Cache);
 		BuildType = nullptr;
 		BuildItem = nullptr;
 		return true;

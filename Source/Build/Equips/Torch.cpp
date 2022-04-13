@@ -6,7 +6,7 @@
 
 ATorch::ATorch()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Torch(TEXT("StaticMesh'/Game/StarterContent/Props/SM_Statue.SM_Statue'"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));

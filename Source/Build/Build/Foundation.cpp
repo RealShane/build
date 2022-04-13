@@ -161,31 +161,39 @@ void AFoundation::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class 
 
 bool AFoundation::Save(FString Name, FString CompName)
 {
-	if (!IsSet && Str::IsBuildContain(Name) && Name != GetName() && Str::IsSideContain(CompName)) {
-		IsAttach = true;
-		BlockActorName = Name;
-		BlockActorSide = CompName;
-		FBlockActor BlockActor;
+	if (IsSet || !Str::IsBuildContain(Name) || Name == GetName() || !Str::IsSideContain(CompName)) {
+		return false;
+	}
+	IsAttach = true;
+	BlockActorName = Name;
+	BlockActorSide = CompName;
+	FBlockActor BlockActor;
+	if (!BlockSideCache.Contains(Name)) {
 		BlockActor.Name = Name;
-		BlockActor.Side = CompName;
-		BlockSideCache.Emplace(BlockActor);
+		BlockSideCache.Emplace(Name, Lib::SetSide(CompName, BlockActor));
 		return true;
 	}
-	return false;
+	BlockActor = BlockSideCache[Name];
+	BlockSideCache.Emplace(Name, Lib::SetSide(CompName, BlockActor));
+	return true;
 }
 
 bool AFoundation::Remove(FString Name, FString CompName)
 {
-	if (!IsSet && !BlockSideCache.IsEmpty() && Str::IsBuildContain(Name) && Str::IsSideContain(CompName)) {
-		IsAttach = false;
-		BlockActorName = nullptr;
-		BlockActorSide = nullptr;
-		for (int i = 0; i < BlockSideCache.Num(); i++) {
-			if (BlockSideCache[i].Name == Name && BlockSideCache[i].Side == CompName) {
-				BlockSideCache.RemoveAt(i);
-			}
-		}
-		return true;
+	if (IsSet || BlockSideCache.IsEmpty() || !Str::IsBuildContain(Name) || !Str::IsSideContain(CompName)) {
+		return false;
 	}
-	return false;
+	IsAttach = false;
+	BlockActorName = nullptr;
+	BlockActorSide = nullptr;
+	if (!BlockSideCache.Contains(Name)) {
+		return false;
+	}
+	FBlockActor BlockActor = Lib::SetSide(CompName, BlockSideCache[Name], true);
+	if (!BlockActor.Right && !BlockActor.Low && !BlockActor.Left && !BlockActor.Up) {
+		BlockSideCache.Remove(Name);
+	}else {
+		BlockSideCache.Emplace(Name, BlockActor);
+	}
+	return true;
 }
