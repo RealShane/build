@@ -10,13 +10,13 @@ struct FBuildCache
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HealthPoints;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString Type;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString Token;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UObject* Building;
 
@@ -25,7 +25,7 @@ struct FBuildCache
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FRotator Rotation;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Right = false;
 
@@ -49,5 +49,4 @@ struct FBuildCache
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool WallUp = false;
-	
 };

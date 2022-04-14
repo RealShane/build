@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -8,9 +6,6 @@
 #include "Build/Character/MainCharacter.h"
 #include "WorldGameModeBase.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class BUILD_API AWorldGameModeBase : public AGameModeBase
 {
@@ -21,5 +16,4 @@ protected:
 
 public:
 	AWorldGameModeBase();
-	
 };

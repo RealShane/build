@@ -1,13 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Build/Lib/Lib.h"
 #include "MainCharacter.generated.h"
 
@@ -17,18 +15,14 @@ class BUILD_API AMainCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AMainCharacter();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
+public:
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//是否移动
@@ -42,11 +36,11 @@ public:
 	//摄像机摇臂
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	USpringArmComponent* SpringArmComponent;
-	
+
 	//摄像机
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UCameraComponent* CameraComponent;
-	
+
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UAnimSequence* AnimSequence;
 
@@ -57,16 +51,15 @@ public:
 	//跳跃
 	FString JumpAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Start.ThirdPersonJump_Start'");
 	FString JumpLoopAnim = TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Loop.ThirdPersonJump_Loop'");
-	
+
 	void AnimPlay(FString Value, bool loop = false);
-	
-	FString GetPlayingAnimName();
+
+	FString GetPlayingAnimName() const;
 
 	void ThirdPerson();
 	void FirstPerson();
 
 private:
 	void Construct();
-	void CreateModel();
-
+	void CreateModel() const;
 };

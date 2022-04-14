@@ -1,120 +1,115 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Lib.h"
 
-void Lib::echo(float Value, bool IsGoLog)
+void FLib::Echo(const float Value, const bool IsGoLog)
 {
-	FString Message = FString::Printf(TEXT("%f"),  Value);
-	if (IsGoLog){
+	const FString Message = FString::Printf(TEXT("%f"), Value);
+	if (IsGoLog) {
 		UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
-	}else{
+	} else {
 		GEngine -> AddOnScreenDebugMessage(-1, 1.f, FColor::Green, Message);
 	}
 }
 
-void Lib::echo(FString Value, bool IsGoLog)
+void FLib::Echo(const FString Value, const bool IsGoLog)
 {
-	FString Message = FString::Printf(TEXT("%s"),  *Value);
-	if (IsGoLog){
+	const FString Message = FString::Printf(TEXT("%s"), *Value);
+	if (IsGoLog) {
 		UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
-	}else{
+	} else {
 		GEngine -> AddOnScreenDebugMessage(-1, 1.f, FColor::Green, Message);
 	}
-	
 }
 
-FBlockActor Lib::SetSide(FString Key, FBlockActor Side, bool IsRemove)
+FBlockActor FLib::SetSide(const FString Key, FBlockActor Side, const bool IsRemove)
 {
 	if (!IsRemove) {
 		if (Key == "Right") {
-			Side.Right = true;
+			Side . Right = true;
 		}
 		if (Key == "Low") {
-			Side.Low = true;
+			Side . Low = true;
 		}
 		if (Key == "Left") {
-			Side.Left = true;
+			Side . Left = true;
 		}
 		if (Key == "Up") {
-			Side.Up = true;
+			Side . Up = true;
 		}
-	}else {
+	} else {
 		if (Key == "Right") {
-			Side.Right = false;
+			Side . Right = false;
 		}
 		if (Key == "Low") {
-			Side.Low = false;
+			Side . Low = false;
 		}
 		if (Key == "Left") {
-			Side.Left = false;
+			Side . Left = false;
 		}
 		if (Key == "Up") {
-			Side.Up = false;
+			Side . Up = false;
 		}
 	}
 	return Side;
 }
 
-FBuildCache Lib::SetSide(FString Key, FBuildCache Side, bool IsRemove, bool IsWall)
+FBuildCache FLib::SetSide(const FString Key, FBuildCache Side, const bool IsRemove, const bool IsWall)
 {
 	if (!IsRemove) {
 		if (IsWall) {
 			if (Key == "Right") {
-				Side.WallRight = true;
+				Side . WallRight = true;
 			}
 			if (Key == "Low") {
-				Side.WallLow = true;
+				Side . WallLow = true;
 			}
 			if (Key == "Left") {
-				Side.WallLeft = true;
+				Side . WallLeft = true;
 			}
 			if (Key == "Up") {
-				Side.WallUp = true;
+				Side . WallUp = true;
 			}
-		}else {
+		} else {
 			if (Key == "Right") {
-				Side.Right = true;
+				Side . Right = true;
 			}
 			if (Key == "Low") {
-				Side.Low = true;
+				Side . Low = true;
 			}
 			if (Key == "Left") {
-				Side.Left = true;
+				Side . Left = true;
 			}
 			if (Key == "Up") {
-				Side.Up = true;
+				Side . Up = true;
 			}
 		}
-	}else {
+	} else {
 		if (IsWall) {
 			if (Key == "Right") {
-				Side.WallRight = false;
+				Side . WallRight = false;
 			}
 			if (Key == "Low") {
-				Side.WallLow = false;
+				Side . WallLow = false;
 			}
 			if (Key == "Left") {
-				Side.WallLeft = false;
+				Side . WallLeft = false;
 			}
 			if (Key == "Up") {
-				Side.WallUp = false;
+				Side . WallUp = false;
 			}
-		}else {
+		} else {
 			if (Key == "Right") {
-				Side.Right = false;
+				Side . Right = false;
 			}
 			if (Key == "Low") {
-				Side.Low = false;
+				Side . Low = false;
 			}
 			if (Key == "Left") {
-				Side.Left = false;
+				Side . Left = false;
 			}
 			if (Key == "Up") {
-				Side.Up = false;
+				Side . Up = false;
 			}
 		}
 	}
 	return Side;
 }
-

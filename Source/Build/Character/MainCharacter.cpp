@@ -1,24 +1,18 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "MainCharacter.h"
 
-// Sets default values
 AMainCharacter::AMainCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick . bCanEverTick = false;
 	this -> Construct();
 	this -> CreateModel();
 	this -> ThirdPerson();
-	// this -> FirstPerson();
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
-	
 }
 
 void AMainCharacter::Construct()
 {
-	SkeletalMesh = LoadObject<USkeletalMesh>(NULL, TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin_Female.SK_Mannequin_Female'"));
+	SkeletalMesh = LoadObject<USkeletalMesh>(
+		nullptr, TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin_Female.SK_Mannequin_Female'"));
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	GetCharacterMovement() -> bOrientRotationToMovement = true;
@@ -27,7 +21,7 @@ void AMainCharacter::Construct()
 	GetCharacterMovement() -> GravityScale = 20;
 }
 
-void AMainCharacter::CreateModel()
+void AMainCharacter::CreateModel() const
 {
 	GetMesh() -> SetRelativeRotation(FRotator(0, -90, 0));
 	GetMesh() -> SetRelativeLocation(FVector(0, 0, -100));
@@ -35,23 +29,20 @@ void AMainCharacter::CreateModel()
 	GetCapsuleComponent() -> InitCapsuleSize(42, 100);
 }
 
-// Called when the game starts or when spawned
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	this -> AnimPlay(Idle, true);
 	SetActorLocation(FVector(4000, 4000, 1000));
-	GetCharacterMovement() -> NavAgentProps.bCanCrouch = true;
+	GetCharacterMovement() -> NavAgentProps . bCanCrouch = true;
 	SpringArmComponent -> TargetArmLength = 600;
 }
 
-// Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-// Called to bind functionality to input
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -67,7 +58,7 @@ void AMainCharacter::AnimPlay(FString Value, bool loop)
 	GetMesh() -> Play(loop);
 }
 
-FString AMainCharacter::GetPlayingAnimName()
+FString AMainCharacter::GetPlayingAnimName() const
 {
 	return AnimSequence -> GetPathName();
 }

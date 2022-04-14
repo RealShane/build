@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "WorldGameModeBase.h"
 
 AWorldGameModeBase::AWorldGameModeBase()
@@ -12,4 +9,5 @@ AWorldGameModeBase::AWorldGameModeBase()
 void AWorldGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
+	GEngine -> SetDynamicResolutionUserSetting(true);
 }

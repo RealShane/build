@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "MainController.h"
 
 AMainController::AMainController()
@@ -49,15 +46,15 @@ void AMainController::SetupInputComponent()
 void AMainController::MoveForward(float Value)
 {
 	ForwardValue = Value;
-	if (Value != 0){
+	if (Value != 0) {
 		const FRotator Rotation = GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FRotator YawRotation(0, Rotation . Yaw, 0);
+		const FVector Direction = FRotationMatrix(YawRotation) . GetUnitAxis(EAxis::X);
 		Main -> AddMovementInput(Direction, Value);
 	}
 	if (ForwardValue || RightValue) {
 		Main -> IsMoving = true;
-	}else {
+	} else {
 		Main -> IsMoving = false;
 	}
 }
@@ -65,15 +62,15 @@ void AMainController::MoveForward(float Value)
 void AMainController::MoveRight(float Value)
 {
 	RightValue = Value;
-	if (Value != 0){
+	if (Value != 0) {
 		const FRotator Rotation = GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FRotator YawRotation(0, Rotation . Yaw, 0);
+		const FVector Direction = FRotationMatrix(YawRotation) . GetUnitAxis(EAxis::Y);
 		Main -> AddMovementInput(Direction, Value);
 	}
 	if (ForwardValue || RightValue) {
 		Main -> IsMoving = true;
-	}else {
+	} else {
 		Main -> IsMoving = false;
 	}
 }
@@ -112,8 +109,8 @@ void AMainController::PressZero()
 		FName Socket = "hand_r";
 		Torch -> AttachToComponent(Main -> GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, Socket);
 		Torch -> LightOn();
-	}else {
-		GetWorld()->DestroyActor(Torch);
+	} else {
+		GetWorld() -> DestroyActor(Torch);
 	}
 	EquipsLock = !EquipsLock;
 }
@@ -130,11 +127,11 @@ void AMainController::MouseWheelUp()
 	float ArmLength = Main -> SpringArmComponent -> TargetArmLength - 50;
 	if (ArmLength > 600) {
 		ArmLength = 600;
-	}else if (ArmLength < 0) {
+	} else if (ArmLength < 0) {
 		ArmLength = 0;
 		IsThirdView = false;
 		Main -> FirstPerson();
-	}else {
+	} else {
 		if (!IsThirdView) {
 			Main -> ThirdPerson();
 		}
@@ -147,11 +144,11 @@ void AMainController::MouseWheelDown()
 	float ArmLength = Main -> SpringArmComponent -> TargetArmLength + 50;
 	if (ArmLength > 600) {
 		ArmLength = 600;
-	}else if (ArmLength < 0) {
+	} else if (ArmLength < 0) {
 		ArmLength = 0;
 		IsThirdView = false;
 		Main -> FirstPerson();
-	}else {
+	} else {
 		if (!IsThirdView) {
 			Main -> ThirdPerson();
 		}
@@ -181,7 +178,7 @@ void AMainController::MoveAnimSwitch()
 		if (IsJumpStart && !IsPlaying) {
 			Main -> AnimPlay(Main -> JumpLoopAnim);
 		}
-	}else if (ForwardValue != 0 || RightValue != 0) {
+	} else if (ForwardValue != 0 || RightValue != 0) {
 		//切换跑步动画
 		if (IsJogCouldPlay && !IsFalling) {
 			IsJumpCouldPlay = true;
@@ -189,11 +186,11 @@ void AMainController::MoveAnimSwitch()
 			IsIdleCouldPlay = true;
 			if (IsCrouching) {
 
-			}else {
+			} else {
 				Main -> AnimPlay(Main -> Jog, true);
 			}
 		}
-	}else {
+	} else {
 		//切换待机动画
 		if (IsIdleCouldPlay && !IsFalling) {
 			IsJumpCouldPlay = true;
@@ -201,7 +198,7 @@ void AMainController::MoveAnimSwitch()
 			IsIdleCouldPlay = false;
 			if (IsCrouching) {
 
-			}else {
+			} else {
 				Main -> AnimPlay(Main -> Idle, true);
 			}
 		}

@@ -7,10 +7,10 @@ USTRUCT(BlueprintType)
 struct FBlockActor
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString Name;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Right = false;
 
@@ -22,5 +22,4 @@ struct FBlockActor
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Up = false;
-	
 };

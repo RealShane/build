@@ -1,14 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Build/Build/BuildSystem.h"
-#include "MainCharacter.h"
-#include "Build/Equips/Torch.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "MainCharacter.h"
+#include "Build/Equips/Torch.h"
+#include "Build/Build/BuildSystem.h"
 #include "Build/Lib/Lib.h"
 #include "MainController.generated.h"
 
@@ -18,11 +16,9 @@ class BUILD_API AMainController : public APlayerController
 	GENERATED_BODY()
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:
-
 	AMainController();
 	virtual void Tick(float DeltaTime) override;
 
@@ -35,7 +31,7 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsJumpCouldPlay = true;
-	
+
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsJogCouldPlay = true;
 
@@ -76,5 +72,4 @@ protected:
 	void Jump();
 	void StopJumping();
 	void MoveAnimSwitch();
-	
 };

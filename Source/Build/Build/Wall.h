@@ -1,10 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
+#include "Components/BoxComponent.h"
 #include "Build/Lib/Lib.h"
 #include "Build/Lib/Str.h"
 #include "Struct/BlockActor.h"
@@ -14,17 +12,14 @@ UCLASS()
 class BUILD_API AWall : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
+
+public:
 	AWall();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
+public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -87,29 +82,37 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Up = false;
 
-	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision);
+	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision) const;
 
-	void SetMaterial(FString Value);
-	
-	UFUNCTION()
-	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
- 
-	UFUNCTION()
-	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
-	UFUNCTION()
-	void LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
- 
-	UFUNCTION()
-	void LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void SetMaterial(FString Value) const;
 
 	UFUNCTION()
-	void UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
- 
+	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                    class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                    const FHitResult& SweepResult);
+
 	UFUNCTION()
-	void UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                     class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                     const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                    class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                    const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	bool Save(FString Name, FString CompName);
 	bool Remove(FString Name, FString CompName);
-
 };

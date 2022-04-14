@@ -1,6 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -11,27 +9,24 @@
 #include "Struct/BuildCache.h"
 #include "BuildSystem.generated.h"
 
-
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BUILD_API UBuildSystem : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UBuildSystem();
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	AMainCharacter* Player;
-	
+
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	float BuildDistance = 500;
 
@@ -52,7 +47,7 @@ public:
 	void UnSetBuild();
 	void BlurAttach();
 	bool Building();
-	bool IsBuildMode();
+	bool IsBuildMode() const;
 
 
 	/**
