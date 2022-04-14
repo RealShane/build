@@ -4,7 +4,7 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SStartUI::Construct(const FArguments& args)
 {
-	StartHUD = args . _MainHUD;
+	StartHUD = args . _StartHUD;
 
 	ChildSlot
 	[

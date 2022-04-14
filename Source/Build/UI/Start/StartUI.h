@@ -8,7 +8,7 @@ class BUILD_API SStartUI : public SCompoundWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SStartUI){}
-	SLATE_ARGUMENT(TWeakObjectPtr<class AStartHUD>, MainHUD)
+	SLATE_ARGUMENT(TWeakObjectPtr<class AStartHUD>, StartHUD)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& args);

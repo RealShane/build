@@ -13,10 +13,4 @@ public:
     virtual void PostInitializeComponents() override;
 
     TSharedPtr<class SStartUI> StartUI;
-
-    // UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-    // void PlayGameClicked();
-    //
-    // UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-    // void QuitGameClicked();
 };
