@@ -4,6 +4,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Build/Character/MainController.h"
 #include "Build/Character/MainCharacter.h"
+#include "Build/UI/Main/MainHUD.h"
 #include "WorldGameModeBase.generated.h"
 
 UCLASS()
