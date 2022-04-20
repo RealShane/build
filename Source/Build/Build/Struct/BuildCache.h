@@ -49,4 +49,10 @@ struct FBuildCache
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool WallUp = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Front = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Back = false;
 };

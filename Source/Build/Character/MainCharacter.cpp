@@ -3,6 +3,10 @@
 AMainCharacter::AMainCharacter()
 {
 	PrimaryActorTick . bCanEverTick = false;
+	Idle = FStatic::Idle;
+	Jog = FStatic::Jog;
+	JumpAnim = FStatic::JumpAnim;
+	JumpLoopAnim = FStatic::JumpLoopAnim;
 	this -> Construct();
 	this -> CreateModel();
 	this -> ThirdPerson();
@@ -11,31 +15,30 @@ AMainCharacter::AMainCharacter()
 
 void AMainCharacter::Construct()
 {
-	SkeletalMesh = LoadObject<USkeletalMesh>(
-		nullptr, TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin_Female.SK_Mannequin_Female'"));
-	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	SkeletalMesh = LoadObject<USkeletalMesh>(nullptr, *FStatic::MannequinFemale);
+	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(*FStatic::SpringArmComponent);
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(*FStatic::CameraComponent);
 	GetCharacterMovement() -> bOrientRotationToMovement = true;
-	GetCharacterMovement() -> JumpZVelocity = 1200;
-	GetCharacterMovement() -> AirControl = 1;
-	GetCharacterMovement() -> GravityScale = 20;
+	GetCharacterMovement() -> JumpZVelocity = FStatic::ThousandAndTwoHundred;
+	GetCharacterMovement() -> AirControl = FStatic::One;
+	GetCharacterMovement() -> GravityScale = FStatic::Twenty;
 }
 
 void AMainCharacter::CreateModel() const
 {
-	GetMesh() -> SetRelativeRotation(FRotator(0, -90, 0));
-	GetMesh() -> SetRelativeLocation(FVector(0, 0, -100));
+	GetMesh() -> SetRelativeRotation(FRotator(FStatic::Zero, -FStatic::Ninety, FStatic::Zero));
+	GetMesh() -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -FStatic::Hundred));
 	GetMesh() -> SetSkeletalMesh(SkeletalMesh);
-	GetCapsuleComponent() -> InitCapsuleSize(42, 100);
+	GetCapsuleComponent() -> InitCapsuleSize(FStatic::FortyTwo, FStatic::Hundred);
 }
 
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	this -> AnimPlay(Idle, true);
-	SetActorLocation(FVector(4000, 4000, 1000));
+	SetActorLocation(FVector(FStatic::FourThousand, FStatic::FourThousand, FStatic::Thousand));
 	GetCharacterMovement() -> NavAgentProps . bCanCrouch = true;
-	SpringArmComponent -> TargetArmLength = 600;
+	SpringArmComponent -> TargetArmLength = FStatic::SixHundred;
 }
 
 void AMainCharacter::Tick(float DeltaTime)
@@ -46,13 +49,11 @@ void AMainCharacter::Tick(float DeltaTime)
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent -> BindAxis("LookRight", this, &AMainCharacter::AddControllerYawInput);
-	PlayerInputComponent -> BindAxis("LookForward", this, &AMainCharacter::AddControllerPitchInput);
 }
 
 void AMainCharacter::AnimPlay(FString Value, bool loop)
 {
-	AnimSequence = LoadObject<UAnimSequence>(NULL, *Value);
+	AnimSequence = LoadObject<UAnimSequence>(nullptr, *Value);
 	GetMesh() -> SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	GetMesh() -> SetAnimation(AnimSequence);
 	GetMesh() -> Play(loop);
@@ -69,8 +70,8 @@ void AMainCharacter::FirstPerson()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 	CameraComponent -> SetupAttachment(GetMesh());
-	CameraComponent -> SetRelativeLocation(FVector(-2.5, -10, 140));
-	CameraComponent -> SetRelativeRotation(FRotator(0, 90, 0));
+	CameraComponent -> SetRelativeLocation(FVector(-FStatic::TwoPointFive, -FStatic::Ten, FStatic::HundredAndForty));
+	CameraComponent -> SetRelativeRotation(FRotator(FStatic::Zero, FStatic::Ninety, FStatic::Zero));
 	CameraComponent -> bUsePawnControlRotation = true;
 }
 
@@ -79,10 +80,10 @@ void AMainCharacter::ThirdPerson()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
-	GetCharacterMovement() -> RotationRate = FRotator(0, 540, 0);
+	GetCharacterMovement() -> RotationRate = FRotator(FStatic::Zero, FStatic::FiveHundredAndForty, FStatic::Zero);
 	SpringArmComponent -> SetupAttachment(RootComponent);
-	SpringArmComponent -> SetRelativeLocation(FVector(0, 0, 80));
-	SpringArmComponent -> SetRelativeRotation(FRotator(-15, 0, 0));
+	SpringArmComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::Eighty));
+	SpringArmComponent -> SetRelativeRotation(FRotator(-FStatic::Fifteen, FStatic::Zero, FStatic::Zero));
 	SpringArmComponent -> bUsePawnControlRotation = true;
 	CameraComponent -> SetupAttachment(SpringArmComponent);
 	CameraComponent -> SetRelativeLocation(FVector::ZeroVector);

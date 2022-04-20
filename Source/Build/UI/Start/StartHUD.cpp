@@ -1,13 +1,9 @@
 #include "StartHUD.h"
 
-void AStartHUD::PostInitializeComponents()
+void AStartHUD::BeginPlay()
 {
-	Super::PostInitializeComponents();
-
-	SAssignNew(StartUI, SStartUI) . StartHUD(this);
-
-	if (GEngine -> IsValidLowLevel()) {
-		GEngine -> GameViewport -> AddViewportWidgetContent(
-			SNew(SWeakWidget) . PossiblyNullContent(StartUI . ToSharedRef()));
-	}
+	StartUI = SNew(SStartUI) . StartHUD(this);
+	GEngine -> GameViewport -> AddViewportWidgetContent(
+		SNew(SWeakWidget) . PossiblyNullContent(StartUI . ToSharedRef()));
+	StartUI -> SetVisibility(EVisibility::Visible);
 }

@@ -11,11 +11,3 @@ void AMainHUD::PostInitializeComponents()
 			SNew(SWeakWidget) . PossiblyNullContent(MainUI . ToSharedRef()));
 	}
 }
-
-// void AMainHUD::PlayGameClicked()
-// {
-// }
-//
-// void AMainHUD::QuitGameClicked()
-// {
-// }

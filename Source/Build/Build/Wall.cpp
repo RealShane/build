@@ -4,34 +4,49 @@ AWall::AWall()
 {
 	PrimaryActorTick . bCanEverTick = true;
 
-	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent -> InitBoxExtent(FVector(5, 190, 190));
+	HalfYZ = FStatic::TwoHundred;
+	HalfX = FStatic::Five;
+	XYZScale = FStatic::Fifty;
+	OverlapCount = FStatic::Zero;
+	AttachCount = FStatic::Zero;
+
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::BoxComponent);
+	BoxComponent -> InitBoxExtent(FVector(FStatic::Five, FStatic::HundredAndNinety, FStatic::HundredAndNinety));
 	SetRootComponent(BoxComponent);
 
-	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Low"));
-	LowSideBoxComponent -> InitBoxExtent(FVector(10, 150, 85));
-	LowSideBoxComponent -> SetRelativeLocation(FVector(0, 0, -125));
+	FrontBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Front);
+	FrontBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::TwoHundred, FStatic::TwoHundred));
+	FrontBoxComponent -> SetRelativeLocation(FVector(-FStatic::Hundred, FStatic::Zero, FStatic::Zero));
+	FrontBoxComponent -> SetupAttachment(RootComponent);
+
+	BackBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Back);
+	BackBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::TwoHundred, FStatic::TwoHundred));
+	BackBoxComponent -> SetRelativeLocation(FVector(FStatic::Hundred, FStatic::Zero, FStatic::Zero));
+	BackBoxComponent -> SetupAttachment(RootComponent);
+
+	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Low);
+	LowSideBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::HundredAndFifty, FStatic::EightyFive));
+	LowSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -FStatic::HundredAndTwentyFive));
 	LowSideBoxComponent -> SetupAttachment(RootComponent);
 
-	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Up"));
-	UpSideBoxComponent -> InitBoxExtent(FVector(10, 150, 85));
-	UpSideBoxComponent -> SetRelativeLocation(FVector(0, 0, 125));
+	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Up);
+	UpSideBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::HundredAndFifty, FStatic::EightyFive));
+	UpSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::HundredAndTwentyFive));
 	UpSideBoxComponent -> SetupAttachment(RootComponent);
 
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(
-		TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Floor(*FStatic::CubeStaticMesh);
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(*FStatic::StaticMeshComponent);
 	StaticMeshComponent -> SetupAttachment(RootComponent);
 	StaticMeshComponent -> SetStaticMesh(Floor . Object);
 	StaticMeshComponent -> SetRelativeScale3D(FVector(HalfX / XYZScale, HalfYZ / XYZScale, HalfYZ / XYZScale));
-	StaticMeshComponent -> SetRelativeLocation(FVector(0, 0, -HalfYZ));
+	StaticMeshComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -HalfYZ));
 }
 
 void AWall::BeginPlay()
 {
 	Super::BeginPlay();
-	this -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_ColorGrid_LowSpec.M_ColorGrid_LowSpec'"));
+	this -> SetMaterial(FStatic::BlurMaterial);
 	BoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AWall::OnOverlapBegin);
 	BoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AWall::OnOverlapEnd);
 
@@ -44,9 +59,6 @@ void AWall::BeginPlay()
 void AWall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!IsSet) {
-		// Lib::echo("bool : " + FString::SanitizeFloat(BlockWallName.IsEmpty()));
-	}
 }
 
 void AWall::SetCollision(const ECollisionEnabled::Type Type) const
@@ -62,7 +74,7 @@ void AWall::SetCollision(const ECollisionEnabled::Type Type) const
 void AWall::SetMaterial(const FString Value) const
 {
 	UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, *Value);
-	StaticMeshComponent -> SetMaterial(0, Material);
+	StaticMeshComponent -> SetMaterial(FStatic::Zero, Material);
 }
 
 void AWall::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
@@ -70,7 +82,7 @@ void AWall::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
                            const FHitResult& SweepResult)
 {
 	if (!IsSet && FStr::IsOverlapContain(OtherComp -> GetName())) {
-		OverlapCount += 1;
+		OverlapCount += FStatic::One;
 		IsBlock = true;
 	}
 }
@@ -79,8 +91,8 @@ void AWall::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor
                          class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (!IsSet && FStr::IsOverlapContain(OtherComp -> GetName())) {
-		OverlapCount -= 1;
-		if (OverlapCount <= 0) {
+		OverlapCount -= FStatic::One;
+		if (OverlapCount <= FStatic::Zero) {
 			IsBlock = false;
 		}
 	}
@@ -125,12 +137,13 @@ bool AWall::Save(FString Name, FString CompName)
 	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName)) {
 		return false;
 	}
+	AttachCount += FStatic::One;
 	IsAttach = true;
-	if (FStr::IsContain(Name, "Foundation")) {
+	if (FStr::IsContain(Name, FStatic::Foundation)) {
 		BlockFoundationName = Name;
 		BlockFoundationSide = CompName;
 	}
-	if (FStr::IsContain(Name, "Wall") && BlockWallName . IsEmpty()) {
+	if (FStr::IsContain(Name, FStatic::Wall) && BlockWallName . IsEmpty()) {
 		BlockWallName = Name;
 		BlockWallSide = CompName;
 	}
@@ -150,12 +163,11 @@ bool AWall::Remove(FString Name, FString CompName)
 	if (IsSet || BlockSideCache . IsEmpty() || !FStr::IsBuildContain(Name) || !FStr::IsSideContain(CompName)) {
 		return false;
 	}
-	IsAttach = false;
-	if (FStr::IsContain(Name, "Foundation")) {
+	AttachCount -= FStatic::One;
+	if (AttachCount <= FStatic::Zero) {
+		IsAttach = false;
 		BlockFoundationName = nullptr;
 		BlockFoundationSide = nullptr;
-	}
-	if (FStr::IsContain(Name, "Wall") && Name == BlockWallName) {
 		BlockWallName = nullptr;
 		BlockWallSide = nullptr;
 	}

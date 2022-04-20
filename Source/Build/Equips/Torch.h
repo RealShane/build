@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Build/Lib/Static.h"
 #include "Torch.generated.h"
 
 UCLASS()

@@ -2,43 +2,44 @@
 
 bool FStr::IsSideContain(const FString Value)
 {
-	if (IsContain(Value, "Right")) {
+	if (IsContain(Value, FStatic::Right)) {
 		return true;
-	} else if (IsContain(Value, "Low")) {
-		return true;
-	} else if (IsContain(Value, "Left")) {
-		return true;
-	} else if (IsContain(Value, "Up")) {
-		return true;
-	} else {
-		return false;
 	}
+	if (IsContain(Value, FStatic::Low)) {
+		return true;
+	}
+	if (IsContain(Value, FStatic::Left)) {
+		return true;
+	}
+	if (IsContain(Value, FStatic::Up)) {
+		return true;
+	}
+	return false;
 }
 
 bool FStr::IsBuildContain(const FString Value)
 {
-	if (IsContain(Value, "Foundation")) {
+	if (IsContain(Value, FStatic::Foundation)) {
 		return true;
-	} else if (IsContain(Value, "Wall")) {
-		return true;
-	} else if (IsContain(Value, "Floor")) {
-		return true;
-	} else {
-		return false;
 	}
+	if (IsContain(Value, FStatic::Wall)) {
+		return true;
+	}
+	if (IsContain(Value, FStatic::Floor)) {
+		return true;
+	}
+	return false;
 }
 
 bool FStr::IsOverlapContain(const FString Value)
 {
-	if (IsContain(Value, "BoxComponent")) {
+	if (IsContain(Value, FStatic::BoxComponent)) {
 		return true;
-	} else if (IsContain(Value, "CollisionCylinder")) {
-		return true;
-	} else if (IsContain(Value, "")) {
-		return true;
-	} else {
-		return false;
 	}
+	if (IsContain(Value, FStatic::CollisionCylinder)) {
+		return true;
+	}
+	return false;
 }
 
 bool FStr::IsContain(const FString Value, const FString Key)

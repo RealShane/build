@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -7,15 +7,15 @@
 #include "Build/Lib/Lib.h"
 #include "Build/Lib/Str.h"
 #include "Struct/BlockActor.h"
-#include "Foundation.generated.h"
+#include "Floor.generated.h"
 
 UCLASS()
-class BUILD_API AFoundation : public AActor
+class BUILD_API AFloor : public AActor
 {
 	GENERATED_BODY()
 
 public:
-	AFoundation();
+	AFloor();
 
 protected:
 	virtual void BeginPlay() override;
@@ -28,9 +28,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* BoxComponent;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UBoxComponent* RangeBoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* RightSideBoxComponent;
@@ -74,10 +71,22 @@ public:
 	int AttachCount;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockActorName;
+	FString BlockFoundationName;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockActorSide;
+	FString BlockFoundationSide;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockWallName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockWallSide;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockFloorName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString BlockFloorSide;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TMap<FString, FBlockActor> BlockSideCache;
@@ -93,9 +102,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Up = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float LandZ;
 
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision) const;
 
@@ -148,7 +154,4 @@ public:
 
 	bool Save(FString Name, FString CompName);
 	bool Remove(FString Name, FString CompName);
-
-	void LandHeight();
-	float RayMax(bool IsUp) const;
 };

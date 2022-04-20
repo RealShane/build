@@ -4,44 +4,55 @@ AFoundation::AFoundation()
 {
 	PrimaryActorTick . bCanEverTick = true;
 
-	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent -> InitBoxExtent(FVector(190, 190, 30));
+	HalfXY = FStatic::TwoHundred;
+	HalfZ = FStatic::Thirty;
+	XYZScale = FStatic::Fifty;
+	OverlapCount = FStatic::Zero;
+	AttachCount = FStatic::Zero;
+	LandZ = FStatic::Zero;
+
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::BoxComponent);
+	BoxComponent -> InitBoxExtent(FVector(FStatic::HundredAndNinety, FStatic::HundredAndNinety, FStatic::Thirty));
 	SetRootComponent(BoxComponent);
 
-	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Right"));
-	RightSideBoxComponent -> InitBoxExtent(FVector(100, 10, 30));
-	RightSideBoxComponent -> SetRelativeLocation(FVector(0, 200, 0));
+	RangeBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Range);
+	RangeBoxComponent -> InitBoxExtent(FVector(FStatic::EightHundred, FStatic::EightHundred, FStatic::TenThousand));
+	RangeBoxComponent ->
+		SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::NineThousandAndNineHundred));
+	RangeBoxComponent -> SetupAttachment(RootComponent);
+
+	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Right);
+	RightSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::Ten, FStatic::Thirty));
+	RightSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::TwoHundred, FStatic::Zero));
 	RightSideBoxComponent -> SetupAttachment(RootComponent);
 
-	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Low"));
-	LowSideBoxComponent -> InitBoxExtent(FVector(10, 100, 30));
-	LowSideBoxComponent -> SetRelativeLocation(FVector(-200, 0, 0));
+	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Low);
+	LowSideBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::Hundred, FStatic::Thirty));
+	LowSideBoxComponent -> SetRelativeLocation(FVector(-FStatic::TwoHundred, FStatic::Zero, FStatic::Zero));
 	LowSideBoxComponent -> SetupAttachment(RootComponent);
 
-	LeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Left"));
-	LeftSideBoxComponent -> InitBoxExtent(FVector(100, 10, 30));
-	LeftSideBoxComponent -> SetRelativeLocation(FVector(0, -200, 0));
+	LeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Left);
+	LeftSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::Ten, FStatic::Thirty));
+	LeftSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, -FStatic::TwoHundred, FStatic::Zero));
 	LeftSideBoxComponent -> SetupAttachment(RootComponent);
 
-	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Up"));
-	UpSideBoxComponent -> InitBoxExtent(FVector(10, 100, 30));
-	UpSideBoxComponent -> SetRelativeLocation(FVector(200, 0, 0));
+	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Up);
+	UpSideBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::Hundred, FStatic::Thirty));
+	UpSideBoxComponent -> SetRelativeLocation(FVector(FStatic::TwoHundred, FStatic::Zero, FStatic::Zero));
 	UpSideBoxComponent -> SetupAttachment(RootComponent);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Foundation(
-		TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"));
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Foundation(*FStatic::CubeStaticMesh);
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(*FStatic::StaticMeshComponent);
 	StaticMeshComponent -> SetupAttachment(RootComponent);
 	StaticMeshComponent -> SetStaticMesh(Foundation . Object);
 	StaticMeshComponent -> SetRelativeScale3D(FVector(HalfXY / XYZScale, HalfXY / XYZScale, HalfZ / XYZScale));
-	StaticMeshComponent -> SetRelativeLocation(FVector(0, 0, -HalfZ));
+	StaticMeshComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -HalfZ));
 }
 
 void AFoundation::BeginPlay()
 {
 	Super::BeginPlay();
-	// Material'/Game/StarterContent/Materials/M_Tech_Hex_Tile.M_Tech_Hex_Tile'
-	this -> SetMaterial(TEXT("Material'/Game/StarterContent/Materials/M_ColorGrid_LowSpec.M_ColorGrid_LowSpec'"));
+	this -> SetMaterial(FStatic::BlurMaterial);
 	BoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFoundation::OnOverlapBegin);
 	BoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFoundation::OnOverlapEnd);
 
@@ -58,9 +69,7 @@ void AFoundation::BeginPlay()
 void AFoundation::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!IsSet) {
-		// Lib::echo("bool : " + this -> GetName() + "---" + FString::SanitizeFloat(IsBlock));
-	}
+	this -> LandHeight();
 }
 
 void AFoundation::SetCollision(const ECollisionEnabled::Type Type) const
@@ -76,7 +85,7 @@ void AFoundation::SetCollision(const ECollisionEnabled::Type Type) const
 void AFoundation::SetMaterial(const FString Value) const
 {
 	UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, *Value);
-	StaticMeshComponent -> SetMaterial(0, Material);
+	StaticMeshComponent -> SetMaterial(FStatic::Zero, Material);
 }
 
 void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
@@ -84,7 +93,7 @@ void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
                                  const FHitResult& SweepResult)
 {
 	if (!IsSet && FStr::IsOverlapContain(OtherComp -> GetName())) {
-		OverlapCount += 1;
+		OverlapCount += FStatic::One;
 		IsBlock = true;
 	}
 }
@@ -93,8 +102,8 @@ void AFoundation::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class 
                                class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (!IsSet && FStr::IsOverlapContain(OtherComp -> GetName())) {
-		OverlapCount -= 1;
-		if (OverlapCount <= 0) {
+		OverlapCount -= FStatic::One;
+		if (OverlapCount <= FStatic::Zero) {
 			IsBlock = false;
 		}
 	}
@@ -173,6 +182,7 @@ bool AFoundation::Save(FString Name, FString CompName)
 	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName)) {
 		return false;
 	}
+	AttachCount += FStatic::One;
 	IsAttach = true;
 	BlockActorName = Name;
 	BlockActorSide = CompName;
@@ -192,9 +202,12 @@ bool AFoundation::Remove(FString Name, FString CompName)
 	if (IsSet || BlockSideCache . IsEmpty() || !FStr::IsBuildContain(Name) || !FStr::IsSideContain(CompName)) {
 		return false;
 	}
-	IsAttach = false;
-	BlockActorName = nullptr;
-	BlockActorSide = nullptr;
+	AttachCount -= FStatic::One;
+	if (AttachCount <= FStatic::Zero) {
+		IsAttach = false;
+		BlockActorName = nullptr;
+		BlockActorSide = nullptr;
+	}
 	if (!BlockSideCache . Contains(Name)) {
 		return false;
 	}
@@ -205,4 +218,63 @@ bool AFoundation::Remove(FString Name, FString CompName)
 		BlockSideCache . Emplace(Name, BlockActor);
 	}
 	return true;
+}
+
+void AFoundation::LandHeight()
+{
+	/**
+	 * DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 5);
+	 */
+	LandZ = FLib::Max(this -> RayMax(true), this -> RayMax(false));
+}
+
+float AFoundation::RayMax(bool IsUp) const
+{
+	FVector Direction = IsUp ? GetActorUpVector() : -GetActorUpVector();
+	FHitResult Center;
+	FHitResult RightUp;
+	FHitResult RightDown;
+	FHitResult LeftUp;
+	FHitResult LeftDown;
+	FVector CenterStart = GetActorLocation();
+	FVector RightUpStart = GetActorLocation() + FVector(FStatic::TwoHundred, FStatic::TwoHundred, FStatic::Zero);
+	FVector RightDownStart = GetActorLocation() + FVector(-FStatic::TwoHundred, FStatic::TwoHundred, FStatic::Zero);
+	FVector LeftUpStart = GetActorLocation() + FVector(FStatic::TwoHundred, -FStatic::TwoHundred, FStatic::Zero);
+	FVector LeftDownStart = GetActorLocation() + FVector(-FStatic::TwoHundred, -FStatic::TwoHundred, FStatic::Zero);
+	GetWorld() -> LineTraceSingleByObjectType(Center, CenterStart, ((Direction * FStatic::TenThousand) + CenterStart),
+	                                          ECC_WorldStatic);
+	GetWorld() -> LineTraceSingleByObjectType(RightUp, RightUpStart,
+	                                          ((Direction * FStatic::TenThousand) + RightUpStart), ECC_WorldStatic);
+	GetWorld() -> LineTraceSingleByObjectType(RightDown, RightDownStart,
+	                                          ((Direction * FStatic::TenThousand) + RightDownStart), ECC_WorldStatic);
+	GetWorld() -> LineTraceSingleByObjectType(LeftUp, LeftUpStart, ((Direction * FStatic::TenThousand) + LeftUpStart),
+	                                          ECC_WorldStatic);
+	GetWorld() -> LineTraceSingleByObjectType(LeftDown, LeftDownStart,
+	                                          ((Direction * FStatic::TenThousand) + LeftDownStart), ECC_WorldStatic);
+	float CenterZ = FStatic::Zero;
+	float RightUpZ = FStatic::Zero;
+	float RightDownZ = FStatic::Zero;
+	float LeftUpZ = FStatic::Zero;
+	float LeftDownZ = FStatic::Zero;
+	if (Center . GetComponent() && Center . Location . Z > FStatic::Zero && FStr::IsContain(
+		Center . GetComponent() -> GetName(), FStatic::Land)) {
+		CenterZ = Center . Location . Z;
+	}
+	if (RightUp . GetComponent() && RightUp . Location . Z > FStatic::Zero && FStr::IsContain(
+		RightUp . GetComponent() -> GetName(), FStatic::Land)) {
+		RightUpZ = RightUp . Location . Z;
+	}
+	if (RightDown . GetComponent() && RightDown . Location . Z > FStatic::Zero && FStr::IsContain(
+		RightDown . GetComponent() -> GetName(), FStatic::Land)) {
+		RightDownZ = RightDown . Location . Z;
+	}
+	if (LeftUp . GetComponent() && LeftUp . Location . Z > FStatic::Zero && FStr::IsContain(
+		LeftUp . GetComponent() -> GetName(), FStatic::Land)) {
+		LeftUpZ = LeftUp . Location . Z;
+	}
+	if (LeftDown . GetComponent() && LeftDown . Location . Z > FStatic::Zero && FStr::IsContain(
+		LeftDown . GetComponent() -> GetName(), FStatic::Land)) {
+		LeftDownZ = LeftDown . Location . Z;
+	}
+	return FLib::Max(FLib::Max(FLib::Max(RightUpZ, RightDownZ), FLib::Max(LeftUpZ, LeftDownZ)), CenterZ);
 }

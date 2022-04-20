@@ -24,8 +24,6 @@ public:
 
 	virtual void SetupInputComponent() override;
 
-	void Construct();
-
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsThirdView = true;
 
@@ -45,6 +43,12 @@ public:
 	float RightValue;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float CameraForwardValue;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float CameraRightValue;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	AMainCharacter* Main;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -59,11 +63,21 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool EquipsLock = false;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	int MoveSteps;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	int CameraMoveSteps;
+
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
+	void LookForward(float Value);
+	void LookRight(float Value);
+
 	void PressOne();
 	void PressTwo();
+	void PressThree();
 	void PressZero();
 	void MouseLeft();
 	void MouseWheelUp();

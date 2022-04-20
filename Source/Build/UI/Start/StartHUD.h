@@ -7,10 +7,11 @@
 UCLASS()
 class BUILD_API AStartHUD : public AHUD
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
 
 public:
-    virtual void PostInitializeComponents() override;
-
-    TSharedPtr<class SStartUI> StartUI;
+	TSharedPtr<class SStartUI> StartUI;
 };

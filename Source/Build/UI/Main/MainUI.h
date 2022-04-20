@@ -2,6 +2,7 @@
 
 #include "Engine.h"
 #include "SlateBasics.h"
+#include "Build/Lib/Static.h"
 #include "MainHUD.h"
 
 class BUILD_API SMainUI : public SCompoundWidget
@@ -12,10 +13,6 @@ public:
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& args);
-
-	FReply PlayGameClicked();
-
-	FReply QuitGameClicked();
 
 	TWeakObjectPtr<class AMainHUD> MainHUD;
 };

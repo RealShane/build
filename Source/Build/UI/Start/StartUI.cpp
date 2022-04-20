@@ -1,41 +1,50 @@
 #include "StartUI.h"
 
+#include "Camera.h"
+
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SStartUI::Construct(const FArguments& args)
 {
 	StartHUD = args . _StartHUD;
-
+	Main = args . _Main;
 	ChildSlot
 	[
 		SNew(SOverlay)
 		+ SOverlay::Slot()
 		  . HAlign(HAlign_Center)
 		  . VAlign(VAlign_Top)
+		  . Padding(FStatic::Zero, FStatic::Ten, FStatic::Zero, FStatic::Zero)
 		[
 			SNew(STextBlock)
-            . ColorAndOpacity(FLinearColor::White)
-            . ShadowColorAndOpacity(FLinearColor::Black)
-            . ShadowOffset(FIntPoint(-1, 1))
-            . Font(FSlateFontInfo("Arial", 26))
-            . Text(FText::FromString("Main Menu"))
+			. ColorAndOpacity(FLinearColor::White)
+			. ShadowColorAndOpacity(FLinearColor::Black)
+			. ShadowOffset(FIntPoint(-FStatic::One, FStatic::One))
+			. Font(FCoreStyle::GetDefaultFontStyle("Regular", FStatic::Thirty))
+			. Text(FText::FromString(TEXT("建  造")))
 		]
 		+ SOverlay::Slot()
-		  . HAlign(HAlign_Right)
-		  . VAlign(VAlign_Bottom)
+		  . HAlign(HAlign_Center)
+		  . VAlign(VAlign_Center)
+		  . Padding(FStatic::Ten, FStatic::Zero, FStatic::Zero, FStatic::Zero)
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
 			[
 				SNew(SButton)
-                . Text(FText::FromString("Play Game!"))
-                . OnClicked(this, &SStartUI::PlayGameClicked)
+                . Text(FText::FromString(TEXT("开 始")))
+                . ButtonStyle(FCoreStyle::Get(), "NoBorder")
+                . ForegroundColor(FSlateColor::UseForeground())
+                . OnClicked(this, &SStartUI::Start)
 			]
 			+ SVerticalBox::Slot()
+			. Padding(FStatic::Zero, FStatic::Fifty, FStatic::Zero, FStatic::Zero)
 			[
 				SNew(SButton)
-                . Text(FText::FromString("Quit Game"))
-                . OnClicked(this, &SStartUI::QuitGameClicked)
+                . Text(FText::FromString(TEXT("退 出")))
+                . ButtonStyle(FCoreStyle::Get(), "NoBorder")
+                . ForegroundColor(FSlateColor::UseStyle())
+                . OnClicked(this, &SStartUI::Quit)
 			]
 		]
 	];
@@ -43,18 +52,14 @@ void SStartUI::Construct(const FArguments& args)
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-FReply SStartUI::PlayGameClicked()
+FReply SStartUI::Start()
 {
-	if (GEngine) {
-		GEngine -> AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, TEXT("PlayGameClicked"));
-	}
+	Main -> Start(StartHUD -> GetWorld());
 	return FReply::Handled();
 }
 
-FReply SStartUI::QuitGameClicked()
+FReply SStartUI::Quit()
 {
-	if (GEngine) {
-		GEngine -> AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, TEXT("QuitGameClicked"));
-	}
+	Main -> Quit();
 	return FReply::Handled();
 }

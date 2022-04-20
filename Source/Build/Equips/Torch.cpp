@@ -4,24 +4,22 @@ ATorch::ATorch()
 {
 	PrimaryActorTick . bCanEverTick = false;
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Torch(
-		TEXT("StaticMesh'/Game/StarterContent/Props/SM_Statue.SM_Statue'"));
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Torch(*FStatic::Torch);
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(*FStatic::StaticMeshComponent);
 	StaticMeshComponent -> SetStaticMesh(Torch . Object);
 	StaticMeshComponent -> SetupAttachment(RootComponent);
 	StaticMeshComponent -> SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	SetRootComponent(StaticMeshComponent);
 
-	ParticleSystemComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystemComponent"));
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> Fire(
-		TEXT("ParticleSystem'/Game/StarterContent/Particles/P_Fire.P_Fire'"));
+	ParticleSystemComponent = CreateDefaultSubobject<UParticleSystemComponent>(*FStatic::ParticleSystemComponent);
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Fire(*FStatic::TorchFire);
 	ParticleSystemComponent -> SetTemplate(Fire . Object);
-	ParticleSystemComponent -> SetRelativeLocation(FVector(0, 0, 100));
+	ParticleSystemComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::Hundred));
 	ParticleSystemComponent -> SetupAttachment(RootComponent);
 
-	PointLightComponent = CreateDefaultSubobject<UPointLightComponent>(TEXT("PointLightComponent"));
+	PointLightComponent = CreateDefaultSubobject<UPointLightComponent>(*FStatic::PointLightComponent);
 	PointLightComponent -> SetupAttachment(RootComponent);
-	PointLightComponent -> SetRelativeLocation(FVector(0, 0, 120));
+	PointLightComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::HundredAndTwenty));
 }
 
 void ATorch::BeginPlay()
@@ -36,9 +34,8 @@ void ATorch::Tick(float DeltaTime)
 
 void ATorch::LightOn() const
 {
-	const FLinearColor Color = FColor(243, 159, 024);
-	PointLightComponent -> SetLightColor(Color);
-	PointLightComponent -> SetIntensity(50000);
-	PointLightComponent -> SetSourceLength(100);
-	PointLightComponent -> SetSourceRadius(100);
+	PointLightComponent -> SetLightColor(FStatic::SunYellowColor);
+	PointLightComponent -> SetIntensity(FStatic::FiftyThousand);
+	PointLightComponent -> SetSourceLength(FStatic::Hundred);
+	PointLightComponent -> SetSourceRadius(FStatic::Hundred);
 }

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Engine.h"
 #include "SlateBasics.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Build/Lib/Static.h"
 #include "StartHUD.h"
 
 class BUILD_API SStartUI : public SCompoundWidget
@@ -9,13 +10,15 @@ class BUILD_API SStartUI : public SCompoundWidget
 public:
 	SLATE_BEGIN_ARGS(SStartUI){}
 	SLATE_ARGUMENT(TWeakObjectPtr<class AStartHUD>, StartHUD)
+	SLATE_ARGUMENT(TWeakObjectPtr<class ACamera>, Main)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& args);
 
-	FReply PlayGameClicked();
-
-	FReply QuitGameClicked();
-
 	TWeakObjectPtr<class AStartHUD> StartHUD;
+	TWeakObjectPtr<class ACamera> Main;
+
+	
+	FReply Start();
+	FReply Quit();
 };

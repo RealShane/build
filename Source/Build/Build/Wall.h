@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
+#include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
 #include "Build/Lib/Str.h"
 #include "Struct/BlockActor.h"
@@ -29,6 +30,12 @@ public:
 	UBoxComponent* BoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* FrontBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* BackBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* LowSideBoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -37,15 +44,15 @@ public:
 
 	//半长宽
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float HalfYZ = 200;
+	float HalfYZ;
 
 	//高
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float HalfX = 5;
+	float HalfX;
 
 	//模型与UE世界比例
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float XYZScale = 50;
+	float XYZScale;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsBlock = false;
@@ -59,7 +66,10 @@ public:
 	bool IsAttach = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	int OverlapCount = 0;
+	int OverlapCount;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	int AttachCount;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BlockFoundationName;

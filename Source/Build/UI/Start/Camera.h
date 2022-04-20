@@ -4,6 +4,7 @@
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
 #include "Camera.generated.h"
 
@@ -14,14 +15,17 @@ class BUILD_API ACamera : public APawn
 
 public:
 	ACamera();
-	
+
 protected:
 	virtual void BeginPlay() override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
-	
+
 	//摄像机
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UCameraComponent* CameraComponent;
+
+	static void Start(const UWorld* World);
+	void Quit() const;
 };

@@ -22,4 +22,10 @@ struct FBlockActor
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Up = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Front = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Back = false;
 };
