@@ -30,6 +30,18 @@ public:
 	UBoxComponent* BoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* RightNeedleBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* LowNeedleBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* LeftNeedleBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* UpNeedleBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* RightSideBoxComponent;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -40,6 +52,18 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UBoxComponent* UpSideBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* DownRightSideBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* DownLowSideBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* DownLeftSideBoxComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UBoxComponent* DownUpSideBoxComponent;
 
 	//半长宽
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -71,37 +95,76 @@ public:
 	int AttachCount;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockFoundationName;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockFoundationSide;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockWallName;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockWallSide;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockFloorName;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockFloorSide;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TMap<FString, FBlockActor> BlockSideCache;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Right = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Low = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Left = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Up = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallRight = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallLow = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallLeft = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallUp = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool DownWallRight = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool DownWallLow = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool DownWallLeft = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool DownWallUp = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	float LandZ;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString UpRayName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString DownRayName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString RightDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString RightDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LowDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LowDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LeftDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LeftDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString UpDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString UpDetectCompName;
 
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision) const;
 
@@ -115,6 +178,42 @@ public:
 	UFUNCTION()
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
 	                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void RightNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                             class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                             const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void RightNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                           class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void LowNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                           class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                           const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void LowNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                         class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void LeftNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                            class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                            const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void LeftNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                          class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void UpNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                          class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                          const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void UpNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                        class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
@@ -152,6 +251,50 @@ public:
 	void UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
 	                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION()
+	void DownRightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+						   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+						   const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void DownRightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+						 class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void DownLowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+						 class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+						 const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void DownLowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+					   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void DownLeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+						  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+						  const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void DownLeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+						class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void DownUpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+						class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+						const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void DownUpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+					  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	void RightDetectRay();
+	void LowDetectRay();
+	void LeftDetectRay();
+	void UpDetectRay();
+
 	bool Save(FString Name, FString CompName);
 	bool Remove(FString Name, FString CompName);
+
+	void LandHeight();
+	float RayMax(bool IsUp);
 };

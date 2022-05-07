@@ -22,23 +22,23 @@ AFoundation::AFoundation()
 	RangeBoxComponent -> SetupAttachment(RootComponent);
 
 	RightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Right);
-	RightSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::Ten, FStatic::Thirty));
-	RightSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::TwoHundred, FStatic::Zero));
+	RightSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::FiftyOne, FStatic::ThirtyOne));
+	RightSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::HundredAndFiftyOne, FStatic::Zero));
 	RightSideBoxComponent -> SetupAttachment(RootComponent);
 
 	LowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Low);
-	LowSideBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::Hundred, FStatic::Thirty));
-	LowSideBoxComponent -> SetRelativeLocation(FVector(-FStatic::TwoHundred, FStatic::Zero, FStatic::Zero));
+	LowSideBoxComponent -> InitBoxExtent(FVector(FStatic::FiftyOne, FStatic::Hundred, FStatic::ThirtyOne));
+	LowSideBoxComponent -> SetRelativeLocation(FVector(-FStatic::HundredAndFiftyOne, FStatic::Zero, FStatic::Zero));
 	LowSideBoxComponent -> SetupAttachment(RootComponent);
 
 	LeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Left);
-	LeftSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::Ten, FStatic::Thirty));
-	LeftSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, -FStatic::TwoHundred, FStatic::Zero));
+	LeftSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::FiftyOne, FStatic::ThirtyOne));
+	LeftSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, -FStatic::HundredAndFiftyOne, FStatic::Zero));
 	LeftSideBoxComponent -> SetupAttachment(RootComponent);
 
 	UpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::Up);
-	UpSideBoxComponent -> InitBoxExtent(FVector(FStatic::Ten, FStatic::Hundred, FStatic::Thirty));
-	UpSideBoxComponent -> SetRelativeLocation(FVector(FStatic::TwoHundred, FStatic::Zero, FStatic::Zero));
+	UpSideBoxComponent -> InitBoxExtent(FVector(FStatic::FiftyOne, FStatic::Hundred, FStatic::ThirtyOne));
+	UpSideBoxComponent -> SetRelativeLocation(FVector(FStatic::HundredAndFiftyOne, FStatic::Zero, FStatic::Zero));
 	UpSideBoxComponent -> SetupAttachment(RootComponent);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Foundation(*FStatic::CubeStaticMesh);
@@ -69,16 +69,22 @@ void AFoundation::BeginPlay()
 void AFoundation::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	this -> LandHeight();
+	if (!IsSet) {
+		this -> LandHeight();
+		this -> RightDetectRay();
+		this -> LowDetectRay();
+		this -> LeftDetectRay();
+		this -> UpDetectRay();
+	}
 }
 
 void AFoundation::SetCollision(const ECollisionEnabled::Type Type) const
 {
 	StaticMeshComponent -> SetCollisionEnabled(Type);
 	if (Type == ECollisionEnabled::QueryOnly) {
-		StaticMeshComponent -> SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		StaticMeshComponent -> SetCollisionResponseToAllChannels(ECR_Ignore);
 	} else {
-		StaticMeshComponent -> SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+		StaticMeshComponent -> SetCollisionResponseToAllChannels(ECR_Block);
 	}
 }
 
@@ -92,37 +98,42 @@ void AFoundation::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
                                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                  const FHitResult& SweepResult)
 {
-	if (!IsSet && FStr::IsOverlapContain(OtherComp -> GetName())) {
-		OverlapCount += FStatic::One;
-		IsBlock = true;
+	if (IsSet || !FStr::IsOverlapContain(OtherComp -> GetName())) {
+		return;
 	}
+	OverlapCount += FStatic::One;
+	IsBlock = true;
 }
 
 void AFoundation::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (!IsSet && FStr::IsOverlapContain(OtherComp -> GetName())) {
-		OverlapCount -= FStatic::One;
-		if (OverlapCount <= FStatic::Zero) {
-			IsBlock = false;
-		}
+	if (IsSet || !FStr::IsOverlapContain(OtherComp -> GetName())) {
+		return;
 	}
+	OverlapCount -= FStatic::One;
+	if (OverlapCount > FStatic::Zero) {
+		return;
+	}
+	IsBlock = false;
 }
 
 void AFoundation::RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                     class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                     const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Right = true;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallRight = true;
 	}
 }
 
 void AFoundation::RightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Right = false;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallRight = false;
 	}
 }
 
@@ -130,16 +141,18 @@ void AFoundation::LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, cla
                                   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                   const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Low = true;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallLow = true;
 	}
 }
 
 void AFoundation::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                 class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Low = false;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallLow = false;
 	}
 }
 
@@ -147,16 +160,18 @@ void AFoundation::LeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, cl
                                    class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                    const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Left = true;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallLeft = true;
 	}
 }
 
 void AFoundation::LeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Left = false;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallLeft = false;
 	}
 }
 
@@ -164,54 +179,171 @@ void AFoundation::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
                                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                  const FHitResult& SweepResult)
 {
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Up = true;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallUp = true;
 	}
 }
 
 void AFoundation::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		Up = false;
+	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
+		FStr::IsContain(OtherComp -> GetName(), FStatic::Low)) {
+		WallUp = false;
+	}
+}
+
+void AFoundation::RightDetectRay()
+{
+	FHitResult Hit;
+	FVector Start = GetActorLocation();
+	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
+	Params . AddIgnoredActor(this);
+	bool IsHit = GetWorld() -> LineTraceSingleByObjectType(Hit, Start,
+	                                                       GetActorRightVector() * FStatic::TwoHundredAndOne + Start,
+	                                                       ECC_WorldStatic, Params);
+	if (IsHit) {
+		FString Name = Hit . GetActor() -> GetName();
+		FString CompName = Hit . GetComponent() -> GetName();
+		if (!FStr::IsContain(Name, FStatic::Foundation) || !FStr::IsSideContain(CompName)) {
+			return;
+		}
+		if (Save(Name, CompName)) {
+			RightDetectName = Name;
+			RightDetectCompName = CompName;
+			Right = true;
+		}
+		return;
+	}
+	if (!RightDetectName . IsEmpty()) {
+		if (Remove(RightDetectName, RightDetectCompName)) {
+			RightDetectName = nullptr;
+			RightDetectCompName = nullptr;
+			Right = false;
+		}
+	}
+}
+
+void AFoundation::LowDetectRay()
+{
+	FHitResult Hit;
+	FVector Start = GetActorLocation();
+	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
+	Params . AddIgnoredActor(this);
+	bool IsHit = GetWorld() -> LineTraceSingleByObjectType(Hit, Start,
+	                                                       -GetActorForwardVector() * FStatic::TwoHundredAndOne +
+	                                                       Start,
+	                                                       ECC_WorldStatic, Params);
+	if (IsHit) {
+		FString Name = Hit . GetActor() -> GetName();
+		FString CompName = Hit . GetComponent() -> GetName();
+		if (!FStr::IsContain(Name, FStatic::Foundation) || !FStr::IsSideContain(CompName)) {
+			return;
+		}
+		if (Save(Name, CompName)) {
+			LowDetectName = Name;
+			LowDetectCompName = CompName;
+			Low = true;
+		}
+		return;
+	}
+	if (!LowDetectName . IsEmpty()) {
+		if (Remove(LowDetectName, LowDetectCompName)) {
+			LowDetectName = nullptr;
+			LowDetectCompName = nullptr;
+			Low = false;
+		}
+	}
+}
+
+void AFoundation::LeftDetectRay()
+{
+	FHitResult Hit;
+	FVector Start = GetActorLocation();
+	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
+	Params . AddIgnoredActor(this);
+	bool IsHit = GetWorld() -> LineTraceSingleByObjectType(Hit, Start,
+	                                                       -GetActorRightVector() * FStatic::TwoHundredAndOne + Start,
+	                                                       ECC_WorldStatic, Params);
+	if (IsHit) {
+		FString Name = Hit . GetActor() -> GetName();
+		FString CompName = Hit . GetComponent() -> GetName();
+		if (!FStr::IsContain(Name, FStatic::Foundation) || !FStr::IsSideContain(CompName)) {
+			return;
+		}
+		if (Save(Name, CompName)) {
+			LeftDetectName = Name;
+			LeftDetectCompName = CompName;
+			Left = true;
+		}
+		return;
+	}
+	if (!LeftDetectName . IsEmpty()) {
+		if (Remove(LeftDetectName, LeftDetectCompName)) {
+			LeftDetectName = nullptr;
+			LeftDetectCompName = nullptr;
+			Left = false;
+		}
+	}
+}
+
+void AFoundation::UpDetectRay()
+{
+	FHitResult Hit;
+	FVector Start = GetActorLocation();
+	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
+	Params . AddIgnoredActor(this);
+	bool IsHit = GetWorld() -> LineTraceSingleByObjectType(Hit, Start,
+	                                                       GetActorForwardVector() * FStatic::TwoHundredAndOne +
+	                                                       Start,
+	                                                       ECC_WorldStatic, Params);
+	if (IsHit) {
+		FString Name = Hit . GetActor() -> GetName();
+		FString CompName = Hit . GetComponent() -> GetName();
+		if (!FStr::IsContain(Name, FStatic::Foundation) || !FStr::IsSideContain(CompName)) {
+			return;
+		}
+		if (Save(Name, CompName)) {
+			UpDetectName = Name;
+			UpDetectCompName = CompName;
+			Up = true;
+		}
+		return;
+	}
+	if (!UpDetectName . IsEmpty()) {
+		if (Remove(UpDetectName, UpDetectCompName)) {
+			UpDetectName = nullptr;
+			UpDetectCompName = nullptr;
+			Up = false;
+		}
 	}
 }
 
 bool AFoundation::Save(FString Name, FString CompName)
 {
-	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName)) {
-		return false;
-	}
 	AttachCount += FStatic::One;
 	IsAttach = true;
-	BlockActorName = Name;
-	BlockActorSide = CompName;
 	FBlockActor BlockActor;
 	if (!BlockSideCache . Contains(Name)) {
-		BlockActor . Name = Name;
-		BlockSideCache . Emplace(Name, FLib::SetSide(CompName, BlockActor));
+		BlockSideCache . Emplace(Name, FStr::SetSide(CompName, BlockActor));
 		return true;
 	}
 	BlockActor = BlockSideCache[Name];
-	BlockSideCache . Emplace(Name, FLib::SetSide(CompName, BlockActor));
+	BlockSideCache . Emplace(Name, FStr::SetSide(CompName, BlockActor));
 	return true;
 }
 
 bool AFoundation::Remove(FString Name, FString CompName)
 {
-	if (IsSet || BlockSideCache . IsEmpty() || !FStr::IsBuildContain(Name) || !FStr::IsSideContain(CompName)) {
-		return false;
-	}
 	AttachCount -= FStatic::One;
 	if (AttachCount <= FStatic::Zero) {
 		IsAttach = false;
-		BlockActorName = nullptr;
-		BlockActorSide = nullptr;
 	}
 	if (!BlockSideCache . Contains(Name)) {
-		return false;
+		return true;
 	}
-	FBlockActor BlockActor = FLib::SetSide(CompName, BlockSideCache[Name], true);
+	FBlockActor BlockActor = FStr::SetSide(CompName, BlockSideCache[Name], true);
 	if (!BlockActor . Right && !BlockActor . Low && !BlockActor . Left && !BlockActor . Up) {
 		BlockSideCache . Remove(Name);
 	} else {
@@ -225,56 +357,39 @@ void AFoundation::LandHeight()
 	/**
 	 * DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 5);
 	 */
-	LandZ = FLib::Max(this -> RayMax(true), this -> RayMax(false));
+	const float UpZ = this -> RayMax(true) + FStatic::Twenty;
+	const float DownZ = this -> RayMax(false) + FStatic::Twenty;
+	if (FStr::IsContain(UpRayName, FStatic::Foundation)) {
+		LandZ = UpZ;
+		return;
+	}
+	LandZ = FLib::Max(UpZ, DownZ);
 }
 
-float AFoundation::RayMax(bool IsUp) const
+float AFoundation::RayMax(bool IsUp)
 {
 	FVector Direction = IsUp ? GetActorUpVector() : -GetActorUpVector();
 	FHitResult Center;
-	FHitResult RightUp;
-	FHitResult RightDown;
-	FHitResult LeftUp;
-	FHitResult LeftDown;
 	FVector CenterStart = GetActorLocation();
-	FVector RightUpStart = GetActorLocation() + FVector(FStatic::TwoHundred, FStatic::TwoHundred, FStatic::Zero);
-	FVector RightDownStart = GetActorLocation() + FVector(-FStatic::TwoHundred, FStatic::TwoHundred, FStatic::Zero);
-	FVector LeftUpStart = GetActorLocation() + FVector(FStatic::TwoHundred, -FStatic::TwoHundred, FStatic::Zero);
-	FVector LeftDownStart = GetActorLocation() + FVector(-FStatic::TwoHundred, -FStatic::TwoHundred, FStatic::Zero);
-	GetWorld() -> LineTraceSingleByObjectType(Center, CenterStart, ((Direction * FStatic::TenThousand) + CenterStart),
-	                                          ECC_WorldStatic);
-	GetWorld() -> LineTraceSingleByObjectType(RightUp, RightUpStart,
-	                                          ((Direction * FStatic::TenThousand) + RightUpStart), ECC_WorldStatic);
-	GetWorld() -> LineTraceSingleByObjectType(RightDown, RightDownStart,
-	                                          ((Direction * FStatic::TenThousand) + RightDownStart), ECC_WorldStatic);
-	GetWorld() -> LineTraceSingleByObjectType(LeftUp, LeftUpStart, ((Direction * FStatic::TenThousand) + LeftUpStart),
-	                                          ECC_WorldStatic);
-	GetWorld() -> LineTraceSingleByObjectType(LeftDown, LeftDownStart,
-	                                          ((Direction * FStatic::TenThousand) + LeftDownStart), ECC_WorldStatic);
+	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
+	Params . AddIgnoredActor(this);
+	bool CenterIsHit = GetWorld() -> LineTraceSingleByObjectType(Center, CenterStart,
+	                                                             Direction * FStatic::TenThousand + CenterStart,
+	                                                             ECC_WorldStatic, Params);
 	float CenterZ = FStatic::Zero;
-	float RightUpZ = FStatic::Zero;
-	float RightDownZ = FStatic::Zero;
-	float LeftUpZ = FStatic::Zero;
-	float LeftDownZ = FStatic::Zero;
-	if (Center . GetComponent() && Center . Location . Z > FStatic::Zero && FStr::IsContain(
-		Center . GetComponent() -> GetName(), FStatic::Land)) {
+	if (CenterIsHit) {
 		CenterZ = Center . Location . Z;
+		if (IsUp) {
+			UpRayName = Center . GetActor() -> GetName();
+		} else {
+			DownRayName = Center . GetActor() -> GetName();
+		}
+	} else {
+		if (IsUp) {
+			UpRayName = nullptr;
+		} else {
+			DownRayName = nullptr;
+		}
 	}
-	if (RightUp . GetComponent() && RightUp . Location . Z > FStatic::Zero && FStr::IsContain(
-		RightUp . GetComponent() -> GetName(), FStatic::Land)) {
-		RightUpZ = RightUp . Location . Z;
-	}
-	if (RightDown . GetComponent() && RightDown . Location . Z > FStatic::Zero && FStr::IsContain(
-		RightDown . GetComponent() -> GetName(), FStatic::Land)) {
-		RightDownZ = RightDown . Location . Z;
-	}
-	if (LeftUp . GetComponent() && LeftUp . Location . Z > FStatic::Zero && FStr::IsContain(
-		LeftUp . GetComponent() -> GetName(), FStatic::Land)) {
-		LeftUpZ = LeftUp . Location . Z;
-	}
-	if (LeftDown . GetComponent() && LeftDown . Location . Z > FStatic::Zero && FStr::IsContain(
-		LeftDown . GetComponent() -> GetName(), FStatic::Land)) {
-		LeftDownZ = LeftDown . Location . Z;
-	}
-	return FLib::Max(FLib::Max(FLib::Max(RightUpZ, RightDownZ), FLib::Max(LeftUpZ, LeftDownZ)), CenterZ);
+	return CenterZ;
 }

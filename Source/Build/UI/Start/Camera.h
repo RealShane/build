@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
+#include "Build/Lib/Request.h"
 #include "Camera.generated.h"
 
 UCLASS()
@@ -25,6 +26,9 @@ public:
 	//摄像机
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UCameraComponent* CameraComponent;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	URequest* Request;
 
 	static void Start(const UWorld* World);
 	void Quit() const;

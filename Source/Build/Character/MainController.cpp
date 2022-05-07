@@ -2,10 +2,9 @@
 
 AMainController::AMainController()
 {
-	MoveSteps = FStatic::Zero;
-	CameraMoveSteps = FStatic::Zero;
 	InputComponent = CreateDefaultSubobject<UInputComponent>(*FStatic::InputComponent);
 	BuildSystem = CreateDefaultSubobject<UBuildSystem>(*FStatic::BuildSystem);
+	NetWork = CreateDefaultSubobject<UNetWork>(*FStatic::NetWork);
 }
 
 void AMainController::BeginPlay()
@@ -14,12 +13,16 @@ void AMainController::BeginPlay()
 	Main = Cast<AMainCharacter>(GetCharacter());
 	BuildSystem -> SetPlayer(Main);
 	this -> bShowMouseCursor = false;
+	NetWork -> Init(GetWorld());
+	this -> Connect();
 }
 
 void AMainController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	this -> LocationSync();
 	this -> MoveAnimSwitch();
+	this -> UIRay();
 }
 
 void AMainController::SetupInputComponent()
@@ -55,14 +58,8 @@ void AMainController::MoveForward(float Value)
 	}
 	if (ForwardValue || RightValue) {
 		Main -> IsMoving = true;
-		MoveSteps += FStatic::One;
-		if (MoveSteps >= FStatic::Thirty) {
-			Main -> IsLagMoving = true;
-		}
 	} else {
-		MoveSteps = FStatic::Zero;
 		Main -> IsMoving = false;
-		Main -> IsLagMoving = false;
 	}
 }
 
@@ -77,52 +74,22 @@ void AMainController::MoveRight(float Value)
 	}
 	if (ForwardValue || RightValue) {
 		Main -> IsMoving = true;
-		MoveSteps += FStatic::One;
-		if (MoveSteps >= FStatic::Thirty) {
-			Main -> IsLagMoving = true;
-		}
 	} else {
-		MoveSteps = FStatic::Zero;
 		Main -> IsMoving = false;
-		Main -> IsLagMoving = false;
 	}
 }
 
 void AMainController::LookForward(float Value)
 {
-	CameraForwardValue = Value;
 	if (Value != FStatic::Zero) {
 		Main -> AddControllerPitchInput(Value);
-	}
-	if (CameraForwardValue || CameraRightValue) {
-		Main -> IsCameraMoving = true;
-		CameraMoveSteps += FStatic::One;
-		if (CameraMoveSteps >= FStatic::Thirty) {
-			Main -> IsCameraLagMoving = true;
-		}
-	} else {
-		CameraMoveSteps = FStatic::Zero;
-		Main -> IsCameraMoving = false;
-		Main -> IsCameraLagMoving = false;
 	}
 }
 
 void AMainController::LookRight(float Value)
 {
-	CameraRightValue = Value;
 	if (Value != FStatic::Zero) {
 		Main -> AddControllerYawInput(Value);
-	}
-	if (CameraForwardValue || CameraRightValue) {
-		Main -> IsCameraMoving = true;
-		CameraMoveSteps += FStatic::One;
-		if (CameraMoveSteps >= FStatic::Thirty) {
-			Main -> IsCameraLagMoving = true;
-		}
-	} else {
-		CameraMoveSteps = FStatic::Zero;
-		Main -> IsCameraMoving = false;
-		Main -> IsCameraLagMoving = false;
 	}
 }
 
@@ -130,7 +97,7 @@ void AMainController::Jump()
 {
 	//防止在空中继续按空格重复播放
 	if (!Main -> GetCharacterMovement() -> IsFalling()) {
-		Main -> AnimPlay(Main -> JumpAnim);
+		Main -> AnimPlay(FStatic::JumpAnim);
 	}
 	Main -> Jump();
 }
@@ -225,14 +192,14 @@ void AMainController::MoveAnimSwitch()
 	const bool IsFalling = Main -> GetCharacterMovement() -> IsFalling();
 	const bool IsCrouching = Main -> GetCharacterMovement() -> IsCrouching();
 	const bool IsPlaying = Main -> GetMesh() -> IsPlaying();
-	const bool IsJumpStart = Main -> GetPlayingAnimName() == Main -> JumpAnim;
+	const bool IsJumpStart = Main -> GetPlayingAnimName() == FStatic::JumpAnim;
 	if (IsFalling && IsJumpCouldPlay) {
 		//切换下落动画
 		IsJumpCouldPlay = false;
 		IsJogCouldPlay = true;
 		IsIdleCouldPlay = true;
 		if (IsJumpStart && !IsPlaying) {
-			Main -> AnimPlay(Main -> JumpLoopAnim);
+			Main -> AnimPlay(FStatic::JumpLoopAnim);
 		}
 	} else if (ForwardValue != FStatic::Zero || RightValue != FStatic::Zero) {
 		//切换跑步动画
@@ -243,7 +210,7 @@ void AMainController::MoveAnimSwitch()
 			if (IsCrouching) {
 
 			} else {
-				Main -> AnimPlay(Main -> Jog, true);
+				Main -> AnimPlay(FStatic::Jog, true);
 			}
 		}
 	} else {
@@ -255,8 +222,108 @@ void AMainController::MoveAnimSwitch()
 			if (IsCrouching) {
 
 			} else {
-				Main -> AnimPlay(Main -> Idle, true);
+				Main -> AnimPlay(FStatic::Idle, true);
 			}
 		}
 	}
+}
+
+void AMainController::UIRay()
+{
+	FVector Direction = Main -> CameraComponent -> GetForwardVector();
+	FHitResult Hit;
+	FVector Start = Main -> CameraComponent -> GetComponentLocation();
+	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
+	Params . AddIgnoredActor(this);
+	// DrawDebugLine(GetWorld(), Start, Direction * FStatic::ThousandAndFiveHundred + Start, FColor::Red, false, 1, 0, 5);
+	if (!GetWorld() -> LineTraceSingleByObjectType(Hit, Start, Direction * FStatic::ThousandAndFiveHundred + Start,
+	                                               ECC_WorldStatic,
+	                                               Params)) {
+		Main -> RayHit . Reset();
+		return;
+	}
+	Main -> RayHit = Hit;
+	if (B) {
+		FString HitName = Hit . GetActor() -> GetName();
+		if (FStr::IsLand(HitName)) {
+			FString HitCompName = Hit . GetComponent() -> GetName();
+			FBuildings Temp = BuildSystem -> Buildings[HitName];;
+			FLib::Echo("--------------------");
+			FLib::Echo("Name : " + HitName + "-" + HitCompName);
+			FLib::Echo("Right : " + FString::SanitizeFloat(Temp . Right));
+			FLib::Echo("Low : " + FString::SanitizeFloat(Temp . Low));
+			FLib::Echo("Left : " + FString::SanitizeFloat(Temp . Left));
+			FLib::Echo("Up : " + FString::SanitizeFloat(Temp . Up));
+			FLib::Echo("WallRight : " + FString::SanitizeFloat(Temp . WallRight));
+			FLib::Echo("WallLow : " + FString::SanitizeFloat(Temp . WallLow));
+			FLib::Echo("WallLeft : " + FString::SanitizeFloat(Temp . WallLeft));
+			FLib::Echo("WallUp : " + FString::SanitizeFloat(Temp . WallUp));
+			FLib::Echo("Front : " + FString::SanitizeFloat(Temp . Front));
+			FLib::Echo("Back : " + FString::SanitizeFloat(Temp . Back));
+			FLib::Echo("DownWallRight : " + FString::SanitizeFloat(Temp . DownWallRight));
+			FLib::Echo("DownWallLow : " + FString::SanitizeFloat(Temp . DownWallLow));
+			FLib::Echo("DownWallLeft : " + FString::SanitizeFloat(Temp . DownWallLeft));
+			FLib::Echo("DownWallUp : " + FString::SanitizeFloat(Temp . DownWallUp));
+		}
+		if (FStr::IsContain(HitName, FStatic::Guest)) {
+			FLib::Echo("--------------------");
+			FLib::Echo("Guest : " + HitName);
+		}
+	}
+}
+
+void AMainController::Print(const int Bo)
+{
+	if (Bo) {
+		this -> B = true;
+	} else {
+		this -> B = false;
+	}
+}
+
+void AMainController::Connect()
+{
+	FString Params;
+	FString Data;
+	const FVector Location = Main -> GetActorLocation();
+	const FRotator Rotation = Main -> GetActorRotation();
+	FPlayerInfo PlayerInfo;
+	PlayerInfo . Name = FDateTime::UtcNow() . ToString(*FStatic::DateTime);
+	PlayerInfo . LocationX = Location . X;
+	PlayerInfo . LocationY = Location . Y;
+	PlayerInfo . LocationZ = Location . Z;
+	PlayerInfo . RotationPitch = Rotation . Pitch;
+	PlayerInfo . RotationYaw = Rotation . Yaw;
+	PlayerInfo . RotationRoll = Rotation . Roll;
+	FJsonObjectConverter::UStructToJsonObjectString(PlayerInfo, Data);
+	FRoute Route;
+	Route.Route = FStatic::FreshJoin;
+	Route.Data = Data;
+	FJsonObjectConverter::UStructToJsonObjectString(Route, Params);
+	NetWork -> Send(Params);
+}
+
+void AMainController::LocationSync()
+{
+	if (!Main -> IsMoving && !Main -> GetCharacterMovement() -> IsFalling()) {
+		return;
+	}
+	FString Params;
+	FString Data;
+	const FVector Location = Main -> GetActorLocation();
+	const FRotator Rotation = Main -> GetActorRotation();
+	FPlayerInfo PlayerInfo;
+	PlayerInfo . Name = FDateTime::UtcNow() . ToString(*FStatic::DateTime);
+	PlayerInfo . LocationX = Location . X;
+	PlayerInfo . LocationY = Location . Y;
+	PlayerInfo . LocationZ = Location . Z;
+	PlayerInfo . RotationPitch = Rotation . Pitch;
+	PlayerInfo . RotationYaw = Rotation . Yaw;
+	PlayerInfo . RotationRoll = Rotation . Roll;
+	FJsonObjectConverter::UStructToJsonObjectString(PlayerInfo, Data);
+	FRoute Route;
+	Route.Route = FStatic::Move;
+	Route.Data = Data;
+	FJsonObjectConverter::UStructToJsonObjectString(Route, Params);
+	NetWork -> Send(Params);
 }

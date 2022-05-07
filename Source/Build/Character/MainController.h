@@ -4,10 +4,14 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "JsonObjectConverter.h"
 #include "MainCharacter.h"
 #include "Build/Equips/Torch.h"
 #include "Build/Build/BuildSystem.h"
 #include "Build/Lib/Lib.h"
+#include "Build/Lib/NetWork.h"
+#include "Struct/PlayerInfo.h"
+#include "Struct/Route.h"
 #include "MainController.generated.h"
 
 UCLASS()
@@ -43,12 +47,6 @@ public:
 	float RightValue;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float CameraForwardValue;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	float CameraRightValue;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	AMainCharacter* Main;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -64,10 +62,7 @@ public:
 	bool EquipsLock = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	int MoveSteps;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	int CameraMoveSteps;
+	UNetWork* NetWork;
 
 protected:
 	void MoveForward(float Value);
@@ -86,4 +81,11 @@ protected:
 	void Jump();
 	void StopJumping();
 	void MoveAnimSwitch();
+	void Connect();
+	void LocationSync();
+
+	UFUNCTION(exec)
+	void Print(int Bo);
+	bool B = false;
+	void UIRay();
 };

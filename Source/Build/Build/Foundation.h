@@ -74,28 +74,64 @@ public:
 	int AttachCount;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockActorName;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	FString BlockActorSide;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TMap<FString, FBlockActor> BlockSideCache;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Right = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Low = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Left = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Up = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallRight = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallLow = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallLeft = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool WallUp = false;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	float LandZ;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString UpRayName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString DownRayName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString RightDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString RightDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LowDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LowDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LeftDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString LeftDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString UpDetectName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FString UpDetectCompName;
 
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision) const;
 
@@ -146,9 +182,13 @@ public:
 	void UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
 	                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	void RightDetectRay();
+	void LowDetectRay();
+	void LeftDetectRay();
+	void UpDetectRay();
 	bool Save(FString Name, FString CompName);
 	bool Remove(FString Name, FString CompName);
 
 	void LandHeight();
-	float RayMax(bool IsUp) const;
+	float RayMax(bool IsUp);
 };

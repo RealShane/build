@@ -8,7 +8,7 @@
 #include "Floor.h"
 #include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
-#include "Struct/BuildCache.h"
+#include "Struct/Buildings.h"
 #include "BuildSystem.generated.h"
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -36,13 +36,19 @@ public:
 	FVector BuildLocation;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UObject* BuildItem = nullptr;
+	AFoundation* FoundationBase = nullptr;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	AWall* WallBase = nullptr;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	AFloor* FloorBase = nullptr;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString BuildType;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	TMap<FString, FBuildCache> Saving;
+	TMap<FString, FBuildings> Buildings;
 
 	void SetPlayer(AMainCharacter* Value);
 	void SetBuild(FString Type);

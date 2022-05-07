@@ -4,6 +4,7 @@ ACamera::ACamera()
 {
 	PrimaryActorTick . bCanEverTick = false;
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(*FStatic::CameraComponent);
+	Request = CreateDefaultSubobject<URequest>(*FStatic::Request);
 	CameraComponent -> SetRelativeLocation(FVector::ZeroVector);
 	CameraComponent -> SetupAttachment(RootComponent);
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
@@ -15,6 +16,7 @@ void ACamera::BeginPlay()
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GWorld, FStatic::Zero);
 	PlayerController -> bShowMouseCursor = true;
 	PlayerController -> SetIgnoreLookInput(true);
+	Request -> Send(FStatic::Test, FStatic::Post);
 }
 
 void ACamera::Tick(float DeltaTime)
@@ -31,6 +33,5 @@ void ACamera::Start(const UWorld* World)
 
 void ACamera::Quit() const
 {
-	UKismetSystemLibrary::QuitEditor();
 	UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, true);
 }

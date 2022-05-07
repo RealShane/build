@@ -30,17 +30,9 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsMoving = false;
 
-	//建造模式时延迟移动解除附着
+	//射线击中物
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsLagMoving = false;
-
-	//相机是否移动
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsCameraMoving = false;
-
-	//建造模式时延迟移动解除附着
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsCameraLagMoving = false;
+	FHitResult RayHit;
 
 	//骨骼模型
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -56,14 +48,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UAnimSequence* AnimSequence;
-
-	//站立待机
-	FString Idle;
-	//跑步
-	FString Jog;
-	//跳跃
-	FString JumpAnim;
-	FString JumpLoopAnim;
 
 	void AnimPlay(FString Value, bool loop = false);
 

@@ -21,4 +21,8 @@ public:
 	
 	FReply Start();
 	FReply Quit();
+	void OnUserNameChanged(const FText& InText);
+	void OnUserNameCommitted(const FText& InText, ETextCommit::Type CommitMethod);
+	void OnPasswordChanged(const FText& InText);
+	void OnPasswordCommitted(const FText& InText, ETextCommit::Type CommitMethod);
 };

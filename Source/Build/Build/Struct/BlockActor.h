@@ -9,9 +9,6 @@ struct FBlockActor
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Name;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Right = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -28,4 +25,16 @@ struct FBlockActor
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Back = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DownWallRight = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DownWallLow = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DownWallLeft = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DownWallUp = false;
 };

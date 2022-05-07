@@ -3,10 +3,6 @@
 AMainCharacter::AMainCharacter()
 {
 	PrimaryActorTick . bCanEverTick = false;
-	Idle = FStatic::Idle;
-	Jog = FStatic::Jog;
-	JumpAnim = FStatic::JumpAnim;
-	JumpLoopAnim = FStatic::JumpLoopAnim;
 	this -> Construct();
 	this -> CreateModel();
 	this -> ThirdPerson();
@@ -35,7 +31,7 @@ void AMainCharacter::CreateModel() const
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	this -> AnimPlay(Idle, true);
+	this -> AnimPlay(FStatic::Idle, true);
 	SetActorLocation(FVector(FStatic::FourThousand, FStatic::FourThousand, FStatic::Thousand));
 	GetCharacterMovement() -> NavAgentProps . bCanCrouch = true;
 	SpringArmComponent -> TargetArmLength = FStatic::SixHundred;
