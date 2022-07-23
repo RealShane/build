@@ -1,0 +1,16 @@
+﻿{
+  "Test" : "测试文字",
+  "HintInputEmail" : "请输入邮箱",
+  "HintInputPassword" : "请输入密码",
+  "LoginButton" : "登录",
+  "QuitButton" : "退出",
+  "JoinButton" : "加入",
+  "ServerListReadFail" : "服务器列表读取失败",
+  "NeverSelect" : "未选择，请选择",
+  "EnteringServer" : "正在进入服务器",
+  "NewJoinBroadcast" : " 加入了服务器",
+  "LostConnection" : "连接丢失，正在返回列表",
+  "BuildBlocked" : "被阻挡，无法放置",
+  "BuildNearEnemy" : "处于敌人基地附近，无法放置",
+  "BuildNoFoundation" : "没有地基，无法放置"
+}

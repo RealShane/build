@@ -2,39 +2,60 @@
 
 AMainCharacter::AMainCharacter()
 {
-	PrimaryActorTick . bCanEverTick = false;
-	this -> Construct();
-	this -> CreateModel();
-	this -> ThirdPerson();
-	AutoPossessPlayer = EAutoReceiveInput::Player0;
-}
+	PrimaryActorTick . bCanEverTick = true;
 
-void AMainCharacter::Construct()
-{
-	SkeletalMesh = LoadObject<USkeletalMesh>(nullptr, *FStatic::MannequinFemale);
+	Health = FStatic::Hundred;
+
+	SkeletalMesh = LoadObject<USkeletalMesh>(nullptr, *FStatic::MainSKM);
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(*FStatic::SpringArmComponent);
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(*FStatic::CameraComponent);
+	UI = CreateDefaultSubobject<UUIFacade>(*FStatic::UI);
 	GetCharacterMovement() -> bOrientRotationToMovement = true;
 	GetCharacterMovement() -> JumpZVelocity = FStatic::ThousandAndTwoHundred;
 	GetCharacterMovement() -> AirControl = FStatic::One;
 	GetCharacterMovement() -> GravityScale = FStatic::Twenty;
-}
 
-void AMainCharacter::CreateModel() const
-{
 	GetMesh() -> SetRelativeRotation(FRotator(FStatic::Zero, -FStatic::Ninety, FStatic::Zero));
-	GetMesh() -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -FStatic::Hundred));
+	GetMesh() -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::Ten));
 	GetMesh() -> SetSkeletalMesh(SkeletalMesh);
 	GetCapsuleComponent() -> InitCapsuleSize(FStatic::FortyTwo, FStatic::Hundred);
+
+	// 摄像机和摇臂
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = true;// 第三人称时改为false
+	bUseControllerRotationRoll = false;
+	GetCharacterMovement() -> RotationRate = FRotator(FStatic::Zero, FStatic::FiveHundredAndForty, FStatic::Zero);
+	SpringArmComponent -> SetupAttachment(RootComponent);
+	SpringArmComponent -> SetRelativeLocation(FVector(FStatic::Ten, FStatic::Zero, FStatic::Seventy));
+	SpringArmComponent -> SetRelativeRotation(FRotator(-FStatic::Fifteen, FStatic::Zero, FStatic::Zero));
+	SpringArmComponent -> bUsePawnControlRotation = true;
+	CameraComponent -> SetupAttachment(SpringArmComponent);
+	CameraComponent -> SetRelativeLocation(FVector::ZeroVector);
+	CameraComponent -> bUsePawnControlRotation = true;// 第三人称时改为false
+
+	SetReplicates(true);
+	bNetLoadOnClient = true;
+	// AutoPossessPlayer = EAutoReceiveInput::Player0;
 }
 
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	this -> AnimPlay(FStatic::Idle, true);
-	SetActorLocation(FVector(FStatic::FourThousand, FStatic::FourThousand, FStatic::Thousand));
+	SetReplicateMovement(true);
+	MainUI = UI -> GetInstance<UMain>(*FStatic::MainBP);
+	PopLayer = UI -> GetInstance<UPopLayer>(*FStatic::PopLayerBP);
+	PopNotice = UI -> GetInstance<UPopNotice>(*FStatic::PopNoticeBP);
+	MainUI -> Open();
+	MainUI -> HealthBar -> SetPercent(Health / FStatic::Hundred);
+	Local = GetGameInstance() -> GetSubsystem<ULocal>();
+	Global = GetWorld() -> GetGameState<AGlobal>();
 	GetCharacterMovement() -> NavAgentProps . bCanCrouch = true;
-	SpringArmComponent -> TargetArmLength = FStatic::SixHundred;
+	SpringArmComponent -> TargetArmLength = FStatic::Zero;
+	UClass* AnimationClass = LoadObject<UClass>(nullptr, *FStatic::MainAnim);
+	if (AnimationClass) {
+		GetMesh() -> SetAnimInstanceClass(AnimationClass);
+	}
+	Join();
 }
 
 void AMainCharacter::Tick(float DeltaTime)
@@ -42,46 +63,35 @@ void AMainCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AMainCharacter::Join()
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	if (GetLocalRole() != ROLE_AutonomousProxy || GetNetMode() == NM_DedicatedServer) {
+		return;
+	}
+	FUser User;
+	User . UID = Local -> UID;
+	User . CID = Local -> CID;
+	User . KeyPre = Local -> KeyPre;
+	User . NickName = Local -> NickName;
+	User . Token = Local -> Token;
+	AddPlayerToServer(*Local -> Token, User);
 }
 
-void AMainCharacter::AnimPlay(FString Value, bool loop)
+void AMainCharacter::AddPlayerToServer_Implementation(const FString& Key, FUser Value)
 {
-	AnimSequence = LoadObject<UAnimSequence>(nullptr, *Value);
-	GetMesh() -> SetAnimationMode(EAnimationMode::AnimationSingleNode);
-	GetMesh() -> SetAnimation(AnimSequence);
-	GetMesh() -> Play(loop);
+	Global -> Joint . Emplace(Key, Value);
+	FLib::Echo(TEXT("服务器保存玩家数据成功！目前人数为 ： " + FString::SanitizeFloat(Global -> Joint . Num())));
+	JoinBroadcast(Value . Token, Value . NickName);
 }
 
-FString AMainCharacter::GetPlayingAnimName() const
+void AMainCharacter::JoinBroadcast_Implementation(const FString& Token, const FString& NickName)
 {
-	return AnimSequence -> GetPathName();
-}
-
-void AMainCharacter::FirstPerson()
-{
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = true;
-	bUseControllerRotationRoll = false;
-	CameraComponent -> SetupAttachment(GetMesh());
-	CameraComponent -> SetRelativeLocation(FVector(-FStatic::TwoPointFive, -FStatic::Ten, FStatic::HundredAndForty));
-	CameraComponent -> SetRelativeRotation(FRotator(FStatic::Zero, FStatic::Ninety, FStatic::Zero));
-	CameraComponent -> bUsePawnControlRotation = true;
-}
-
-void AMainCharacter::ThirdPerson()
-{
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
-	GetCharacterMovement() -> RotationRate = FRotator(FStatic::Zero, FStatic::FiveHundredAndForty, FStatic::Zero);
-	SpringArmComponent -> SetupAttachment(RootComponent);
-	SpringArmComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, FStatic::Eighty));
-	SpringArmComponent -> SetRelativeRotation(FRotator(-FStatic::Fifteen, FStatic::Zero, FStatic::Zero));
-	SpringArmComponent -> bUsePawnControlRotation = true;
-	CameraComponent -> SetupAttachment(SpringArmComponent);
-	CameraComponent -> SetRelativeLocation(FVector::ZeroVector);
-	CameraComponent -> bUsePawnControlRotation = false;
+	if (Token . IsEmpty()) {
+		return;
+	}
+	if (GetNetMode() == NM_DedicatedServer) {
+		FLib::Echo(TEXT("服务器端 --- 新的加入: " + NickName + " !"));
+		return;
+	}
+	PopNotice -> Pop(NickName + Lang . Get(FStatic::EnteringServerText));
 }

@@ -1,41 +1,56 @@
-﻿// ReSharper disable All
-#include "BuildSystem.h"
+﻿#include "BuildSystem.h"
 
 UBuildSystem::UBuildSystem()
 {
 	PrimaryComponentTick . bCanEverTick = true;
 	BuildDistance = FStatic::FiveHundred;
+	UI = CreateDefaultSubobject<UUIFacade>(*FStatic::UI);
 }
 
 void UBuildSystem::BeginPlay()
 {
 	Super::BeginPlay();
+	Local = GetWorld() -> GetGameInstance() -> GetSubsystem<ULocal>();
+	Global = GetWorld() -> GetGameState<AGlobal>();
+	PopLayer = UI -> GetInstance<UPopLayer>(*FStatic::PopLayerBP);
+	PopNotice = UI -> GetInstance<UPopNotice>(*FStatic::PopNoticeBP);
 }
 
 void UBuildSystem::TickComponent(float DeltaTime, ELevelTick TickType,
                                  FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if (!Player) {
+		return;
+	}
+	SetServerPlayer(Player);
+	if (IsServer()) {
+		return;
+	}
 	this -> BlurAttach();
 }
 
-void UBuildSystem::SetPlayer(AMainCharacter* Value)
+void UBuildSystem::SetPlayer(AMainCharacter* P)
 {
-	this -> Player = Value;
+	Player = P;
 }
 
-bool UBuildSystem::Building()
+void UBuildSystem::SetServerPlayer_Implementation(AMainCharacter* P)
+{
+	Player = P;
+}
+
+void UBuildSystem::Building()
 {
 	if (BuildType == FStatic::Foundation) {
-		return this -> FoundationBuild();
+		this -> FoundationBuild(Local -> CID, Local -> UID);
 	}
 	if (BuildType == FStatic::Wall) {
-		return this -> WallBuild();
+		this -> WallBuild(Local -> CID, Local -> UID);
 	}
 	if (BuildType == FStatic::Floor) {
-		return this -> FloorBuild();
+		this -> FloorBuild(Local -> CID, Local -> UID);
 	}
-	return false;
 }
 
 /**
@@ -44,10 +59,13 @@ bool UBuildSystem::Building()
 void UBuildSystem::SetBuild(const FString Type)
 {
 	if (Type == FStatic::Foundation) {
+		BuildType = FStatic::Foundation;
 		this -> Foundation();
 	} else if (Type == FStatic::Wall) {
+		BuildType = FStatic::Wall;
 		this -> Wall();
 	} else if (Type == FStatic::Floor) {
+		BuildType = FStatic::Floor;
 		this -> Floor();
 	}
 }
@@ -75,11 +93,11 @@ void UBuildSystem::UnSetBuild()
 void UBuildSystem::BlurAttach()
 {
 	if (BuildType == FStatic::Foundation) {
-		this -> FoundationBlurAttach();
+		this -> FoundationBlurAttach(Player -> RayHit, Local -> CID, Local -> UID);
 	} else if (BuildType == FStatic::Wall) {
-		this -> WallBlurAttach();
+		this -> WallBlurAttach(Player -> RayHit, Local -> CID, Local -> UID);
 	} else if (BuildType == FStatic::Floor) {
-		this -> FloorBlurAttach();
+		this -> FloorBlurAttach(Player -> RayHit, Local -> CID, Local -> UID);
 	}
 }
 
@@ -88,23 +106,58 @@ bool UBuildSystem::IsBuildMode() const
 	return !BuildType . IsEmpty();
 }
 
-void UBuildSystem::Foundation()
+bool UBuildSystem::IsServer() const
+{
+	if (GetNetMode() != NM_DedicatedServer) {
+		return false;
+	}
+	return true;
+}
+
+bool UBuildSystem::IsClient() const
+{
+	if (Player -> GetLocalRole() != ROLE_AutonomousProxy || GetNetMode() == NM_DedicatedServer) {
+		return false;
+	}
+	return true;
+}
+
+FString UBuildSystem::CreateBuildingKey(const FString Type) const
+{
+	return Local -> KeyPre +
+		FStatic::Underline + Type +
+		FStatic::Underline +
+		FLib::Salt(FStatic::Ten) +
+		FStatic::Underline +
+		FString::SanitizeFloat(FDateTime::Now() . ToUnixTimestamp());
+}
+
+void UBuildSystem::Pop_Implementation(const FString& Message, const FString& Color)
+{
+	PopNotice -> Pop(Message, Color);
+}
+
+void UBuildSystem::Foundation_Implementation()
 {
 	if (BuildType != FStatic::Foundation) {
 		this -> UnSetBuild();
 	}
 	if (FoundationBase == nullptr) {
+		FActorSpawnParameters Parameters;
+		Parameters . Owner = Player;
+		Parameters . bNoFail = true;
 		FoundationBase = GetWorld() -> SpawnActor<AFoundation>(
 			FVector(FStatic::Zero, FStatic::Zero, FStatic::FiveThousand),
-			FRotator(FStatic::Zero));
-		FoundationBase -> SetCollision(ECollisionEnabled::QueryOnly);
+			FRotator(FStatic::Zero),
+			Parameters
+		);
 		BuildType = FStatic::Foundation;
 	} else {
 		this -> UnSetBuild();
 	}
 }
 
-void UBuildSystem::FoundationBlurAttach()
+void UBuildSystem::FoundationBlurAttach_Implementation(FHitResult RayHit, int CID, int UID)
 {
 	if (FoundationBase != nullptr) {
 		//视角旋转的Yaw值是极坐标ρ
@@ -116,7 +169,7 @@ void UBuildSystem::FoundationBlurAttach()
 		if (Angle <= FStatic::Zero) {
 			Angle = FStatic::EightyNine;
 		}
-		BuildDistance = FMath::Tan(FMath::DegreesToRadians(Angle)) * MainLocation . Z;
+		BuildDistance = FMath::Tan(FMath::DegreesToRadians(Angle)) * FStatic::Hundred;
 		if (BuildDistance > FStatic::Thousand) {
 			BuildDistance = FStatic::Thousand;
 		}
@@ -132,47 +185,59 @@ void UBuildSystem::FoundationBlurAttach()
 		}
 		BuildLocation = FVector(MainLocation . X, MainLocation . Y, FStatic::Zero) + FVector(X, Y, Z);
 		// 光线击中处附着
-		const bool IsHit = Player -> RayHit . IsValidBlockingHit();
-		if (IsHit) {
-			const FString HitName = Player -> RayHit . GetActor() -> GetName();
-			const bool IsFoundation = FStr::IsContain(HitName, FStatic::Foundation);
-			if (IsFoundation) {
-				const FBuildings BuildBlock = Buildings[HitName];
-				const FString AttachSide = Player -> RayHit . GetComponent() -> GetName();
-				const float Side = FoundationBase -> HalfXY * FStatic::Two;
-				if (AttachSide == FStatic::Right && !BuildBlock . Right) {
-					const float CalX = FMath::Cos(
-							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
-						Side;
-					const float CalY = FMath::Sin(
-							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
-						Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+		if (RayHit . IsValidBlockingHit()) {
+			const FString HitName = RayHit . GetActor() -> GetName();
+			if (FStr::IsContain(HitName, FStatic::Foundation)) {
+				const FString Index = RayHit . GetActor() -> Tags[FStatic::Zero] . ToString();
+				const FBuildings BuildBlock = Global -> Buildings[Index];
+				bool bIsAlly = false;
+				if (BuildBlock . CID == CID && CID != FStatic::Zero) {
+					bIsAlly = true;
 				}
-				if (AttachSide == FStatic::Low && !BuildBlock . Low) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				if (BuildBlock . CID == FStatic::Zero && BuildBlock . UID == UID) {
+					bIsAlly = true;
 				}
-				if (AttachSide == FStatic::Left && !BuildBlock . Left) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::Up && !BuildBlock . Up) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				if (bIsAlly) {
+					const FString AttachSide = RayHit . GetComponent() -> GetName();
+					const float Side = FoundationBase -> HalfXY * FStatic::Two;
+					if (AttachSide == FStatic::Right && !BuildBlock . Right) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Low && !BuildBlock . Low) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Left && !BuildBlock . Left) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Up && !BuildBlock . Up) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::Zero);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
 				}
 			}
 		}
@@ -181,28 +246,26 @@ void UBuildSystem::FoundationBlurAttach()
 	}
 }
 
-bool UBuildSystem::FoundationBuild()
+void UBuildSystem::FoundationBuild_Implementation(int CID, int UID)
 {
 	if (FoundationBase == nullptr) {
-		return false;
+		return;
 	}
 	if (FoundationBase -> IsBlock) {
-		//TODO UI显示被阻挡无法放置
-		FLib::Echo(TEXT("被阻挡无法放置！"));
-		return false;
+		Pop(Lang . Get(FStatic::BuildBlockedText), FStatic::WarningFontMaterial);
+		return;
 	}
-	FoundationBase -> StaticMeshComponent -> SetMobility(EComponentMobility::Static);
-	FoundationBase -> StaticMeshComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FoundationBase -> BoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FoundationBase -> RightSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FoundationBase -> LowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FoundationBase -> LeftSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FoundationBase -> UpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FoundationBase -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-	FoundationBase -> SetMaterial(FStatic::WoodMaterial);
-	FoundationBase -> PrimaryActorTick . bCanEverTick = false;
+	if (FoundationBase -> EnemyRange) {
+		Pop(Lang . Get(FStatic::BuildNearEnemyText), FStatic::WarningFontMaterial);
+		return;
+	}
+	FString Key = CreateBuildingKey(FStatic::Foundation);
+	FoundationBase -> Key = Key;
 	FoundationBase -> IsSet = true;
 	FBuildings Cache;
+	Cache . UID = UID;
+	Cache . CID = CID;
+	Cache . InGameKey = Key;
 	Cache . HealthPoints = FStatic::Hundred;
 	Cache . Type . Foundation = true;
 	Cache . Building = FoundationBase;
@@ -211,16 +274,16 @@ bool UBuildSystem::FoundationBuild()
 	if (FoundationBase -> IsAttach) {
 		for (auto& Item : FoundationBase -> BlockSideCache) {
 			if (Item . Value . Right) {
-				Buildings[Item . Key] . Right = Item . Value . Right;
+				Global -> Buildings[Item . Key] . Right = Item . Value . Right;
 			}
 			if (Item . Value . Low) {
-				Buildings[Item . Key] . Low = Item . Value . Low;
+				Global -> Buildings[Item . Key] . Low = Item . Value . Low;
 			}
 			if (Item . Value . Left) {
-				Buildings[Item . Key] . Left = Item . Value . Left;
+				Global -> Buildings[Item . Key] . Left = Item . Value . Left;
 			}
 			if (Item . Value . Up) {
-				Buildings[Item . Key] . Up = Item . Value . Up;
+				Global -> Buildings[Item . Key] . Up = Item . Value . Up;
 			}
 		}
 		Cache . Right = FoundationBase -> Right;
@@ -232,29 +295,33 @@ bool UBuildSystem::FoundationBuild()
 		Cache . WallLeft = FoundationBase -> WallLeft;
 		Cache . WallUp = FoundationBase -> WallUp;
 	}
-	Buildings . Emplace(FoundationBase -> GetName(), Cache);
+	Global -> Buildings . Emplace(Key, Cache);
 	BuildType = nullptr;
 	FoundationBase = nullptr;
-	return true;
 }
 
 
-void UBuildSystem::Wall()
+void UBuildSystem::Wall_Implementation()
 {
 	if (BuildType != FStatic::Wall) {
 		this -> UnSetBuild();
 	}
 	if (WallBase == nullptr) {
-		WallBase = GetWorld() -> SpawnActor<AWall>(FVector(FStatic::Zero, FStatic::Zero, FStatic::FiveThousand),
-		                                           FRotator(FStatic::Zero));
-		WallBase -> SetCollision(ECollisionEnabled::QueryOnly);
+		FActorSpawnParameters Parameters;
+		Parameters . Owner = Player;
+		Parameters . bNoFail = true;
+		WallBase = GetWorld() -> SpawnActor<AWall>(
+			FVector(FStatic::Zero, FStatic::Zero, FStatic::FiveThousand),
+			FRotator(FStatic::Zero),
+			Parameters
+		);
 		BuildType = FStatic::Wall;
 	} else {
 		this -> UnSetBuild();
 	}
 }
 
-void UBuildSystem::WallBlurAttach()
+void UBuildSystem::WallBlurAttach_Implementation(FHitResult RayHit, int CID, int UID)
 {
 	if (WallBase != nullptr) {
 		//视角旋转的Yaw值是极坐标ρ
@@ -267,7 +334,7 @@ void UBuildSystem::WallBlurAttach()
 		if (Angle <= FStatic::Zero) {
 			Angle = FStatic::EightyNine;
 		}
-		BuildDistance = FMath::Tan(FMath::DegreesToRadians(Angle)) * MainLocation . Z;
+		BuildDistance = FMath::Tan(FMath::DegreesToRadians(Angle)) * FStatic::Hundred;
 		if (BuildDistance > FStatic::Thousand) {
 			BuildDistance = FStatic::Thousand;
 		}
@@ -289,100 +356,127 @@ void UBuildSystem::WallBlurAttach()
 		}
 		BuildLocation = FVector(MainLocation . X, MainLocation . Y, FStatic::Hundred) + FVector(X, Y, Z);
 		// 光线击中处附着
-		const bool IsHit = Player -> RayHit . IsValidBlockingHit();
-		if (IsHit) {
-			const FString HitName = Player -> RayHit . GetActor() -> GetName();
+		if (RayHit . IsValidBlockingHit()) {
+			const FString HitName = RayHit . GetActor() -> GetName();
 			const bool IsFoundation = FStr::IsContain(HitName, FStatic::Foundation);
 			const bool IsWall = FStr::IsContain(HitName, FStatic::Wall);
 			const bool IsFloor = FStr::IsContain(HitName, FStatic::Floor);
 			const float Side = WallBase -> HalfYZ;
-			FString AttachSide = Player -> RayHit . GetComponent() -> GetName();
+			FString AttachSide = RayHit . GetComponent() -> GetName();
 			if (IsFoundation || IsFloor) {
-				float CalZ = FStatic::Zero;
-				if (IsFoundation) {
-					CalZ = FStatic::Thirty;
+				const FString Index = RayHit . GetActor() -> Tags[FStatic::Zero] . ToString();
+				const FBuildings BuildBlock = Global -> Buildings[Index];
+				bool bIsAlly = false;
+				if (BuildBlock . CID == CID && CID != FStatic::Zero) {
+					bIsAlly = true;
 				}
-				if (IsFloor) {
-					CalZ = FStatic::Four;
+				if (BuildBlock . CID == FStatic::Zero && BuildBlock . UID == UID) {
+					bIsAlly = true;
 				}
-				const FBuildings BuildBlock = Buildings[HitName];
-				if (AttachSide == FStatic::Right && !BuildBlock . WallRight) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::Ninety;
-				}
-				if (AttachSide == FStatic::Low && !BuildBlock . WallLow) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty;
-				}
-				if (AttachSide == FStatic::Left && !BuildBlock . WallLeft) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy;
-				}
-				if (AttachSide == FStatic::Up && !BuildBlock . WallUp) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty;
-				}
+				if (bIsAlly) {
+					float CalZ = FStatic::Zero;
+					if (IsFoundation) {
+						CalZ = FStatic::Thirty;
+					}
+					if (IsFloor) {
+						CalZ = FStatic::Four;
+					}
+					if (AttachSide == FStatic::Right && !BuildBlock . WallRight) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::Ninety;
+					}
+					if (AttachSide == FStatic::Low && !BuildBlock . WallLow) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty;
+					}
+					if (AttachSide == FStatic::Left && !BuildBlock . WallLeft) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy;
+					}
+					if (AttachSide == FStatic::Up && !BuildBlock . WallUp) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ + Side);
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty;
+					}
 
-				if (AttachSide == FStatic::DownWallRight && !BuildBlock . DownWallRight) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::Ninety;
-				}
-				if (AttachSide == FStatic::DownWallLow && !BuildBlock . DownWallLow) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty;
-				}
-				if (AttachSide == FStatic::DownWallLeft && !BuildBlock . DownWallLeft) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy;
-				}
-				if (AttachSide == FStatic::DownWallUp && !BuildBlock . DownWallUp) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
-					BuildRotation = BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty;
+					if (AttachSide == FStatic::DownWallRight && !BuildBlock . DownWallRight) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::Ninety;
+					}
+					if (AttachSide == FStatic::DownWallLow && !BuildBlock . DownWallLow) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty;
+					}
+					if (AttachSide == FStatic::DownWallLeft && !BuildBlock . DownWallLeft) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy;
+					}
+					if (AttachSide == FStatic::DownWallUp && !BuildBlock . DownWallUp) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, -(CalZ + Side));
+						BuildRotation = BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty;
+					}
 				}
 			}
 			if (IsWall) {
-				const FBuildings BuildBlock = Buildings[HitName];
-				if (AttachSide == FStatic::Low && !BuildBlock . Low) {
-					BuildLocation = BuildBlock . Location +
-						FVector(FStatic::Zero, FStatic::Zero, -Side * FStatic::Two);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				const FString Index = RayHit . GetActor() -> Tags[FStatic::Zero] . ToString();
+				const FBuildings BuildBlock = Global -> Buildings[Index];
+				bool bIsAlly = false;
+				if (BuildBlock . CID == CID && CID != FStatic::Zero) {
+					bIsAlly = true;
 				}
-				if (AttachSide == FStatic::Up && !BuildBlock . Up) {
-					BuildLocation = BuildBlock . Location +
-						FVector(FStatic::Zero, FStatic::Zero, Side * FStatic::Two);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				if (BuildBlock . CID == FStatic::Zero && BuildBlock . UID == UID) {
+					bIsAlly = true;
+				}
+				if (bIsAlly) {
+					if (AttachSide == FStatic::Low && !BuildBlock . Low) {
+						BuildLocation = BuildBlock . Location +
+							FVector(FStatic::Zero, FStatic::Zero, -Side * FStatic::Two);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Up && !BuildBlock . Up) {
+						BuildLocation = BuildBlock . Location +
+							FVector(FStatic::Zero, FStatic::Zero, Side * FStatic::Two);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
 				}
 			}
 		}
@@ -391,69 +485,66 @@ void UBuildSystem::WallBlurAttach()
 	}
 }
 
-bool UBuildSystem::WallBuild()
+void UBuildSystem::WallBuild_Implementation(int CID, int UID)
 {
 	if (WallBase == nullptr) {
-		return false;
+		return;
 	}
 	if (WallBase -> IsBlock) {
-		//TODO UI显示被阻挡无法放置
-		FLib::Echo(TEXT("被阻挡无法放置！"));
-		return false;
+		Pop(Lang . Get(FStatic::BuildBlockedText), FStatic::WarningFontMaterial);
+		return;
 	}
 	if (!WallBase -> IsAttach) {
-		//TODO UI显示被阻挡无法放置
-		FLib::Echo(TEXT("未附着无法放置！"));
-		return false;
+		Pop(Lang . Get(FStatic::BuildNoFoundationText), FStatic::WarningFontMaterial);
+		return;
 	}
-	WallBase -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
-	WallBase -> StaticMeshComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	WallBase -> BoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	WallBase -> FrontBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	WallBase -> BackBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	WallBase -> LowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	WallBase -> UpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	WallBase -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-	WallBase -> SetMaterial(FStatic::WoodMaterial);
-	WallBase -> PrimaryActorTick . bCanEverTick = false;
+	if (WallBase -> EnemyRange) {
+		Pop(Lang . Get(FStatic::BuildNearEnemyText), FStatic::WarningFontMaterial);
+		return;
+	}
+	FString Key = CreateBuildingKey(FStatic::Wall);
+	WallBase -> Key = Key;
 	WallBase -> IsSet = true;
 	FBuildings Cache;
+	Cache . UID = UID;
+	Cache . CID = CID;
+	Cache . InGameKey = Key;
 	Cache . HealthPoints = FStatic::Hundred;
 	Cache . Type . Wall = true;
 	Cache . Building = WallBase;
 	Cache . Location = BuildLocation;
 	Cache . Rotation = WallBase -> GetActorRotation();
 	for (auto& Item : WallBase -> BlockSideCache) {
-		if (Buildings[Item . Key] . Type . Foundation || Buildings[Item . Key] . Type . Floor) {
+		if (Global -> Buildings[Item . Key] . Type . Foundation || Global -> Buildings[Item . Key] . Type . Floor) {
 			if (Item . Value . Right) {
-				Buildings[Item . Key] . WallRight = Item . Value . Right;
+				Global -> Buildings[Item . Key] . WallRight = Item . Value . Right;
 			}
 			if (Item . Value . Low) {
-				Buildings[Item . Key] . WallLow = Item . Value . Low;
+				Global -> Buildings[Item . Key] . WallLow = Item . Value . Low;
 			}
 			if (Item . Value . Left) {
-				Buildings[Item . Key] . WallLeft = Item . Value . Left;
+				Global -> Buildings[Item . Key] . WallLeft = Item . Value . Left;
 			}
 			if (Item . Value . Up) {
-				Buildings[Item . Key] . WallUp = Item . Value . Up;
+				Global -> Buildings[Item . Key] . WallUp = Item . Value . Up;
 			}
 			if (Item . Value . DownWallRight) {
-				Buildings[Item . Key] . DownWallRight = Item . Value . DownWallRight;
+				Global -> Buildings[Item . Key] . DownWallRight = Item . Value . DownWallRight;
 			}
 			if (Item . Value . DownWallLow) {
-				Buildings[Item . Key] . DownWallLow = Item . Value . DownWallLow;
+				Global -> Buildings[Item . Key] . DownWallLow = Item . Value . DownWallLow;
 			}
 			if (Item . Value . DownWallLeft) {
-				Buildings[Item . Key] . DownWallLeft = Item . Value . DownWallLeft;
+				Global -> Buildings[Item . Key] . DownWallLeft = Item . Value . DownWallLeft;
 			}
 			if (Item . Value . DownWallUp) {
-				Buildings[Item . Key] . DownWallUp = Item . Value . DownWallUp;
+				Global -> Buildings[Item . Key] . DownWallUp = Item . Value . DownWallUp;
 			}
 		} else {
 			if (Item . Value . Low) {
-				Buildings[Item . Key] . Low = Item . Value . Low;
+				Global -> Buildings[Item . Key] . Low = Item . Value . Low;
 			} else if (Item . Value . Up) {
-				Buildings[Item . Key] . Up = Item . Value . Up;
+				Global -> Buildings[Item . Key] . Up = Item . Value . Up;
 			}
 		}
 	}
@@ -461,29 +552,32 @@ bool UBuildSystem::WallBuild()
 	Cache . Back = WallBase -> Back;
 	Cache . Low = WallBase -> Low;
 	Cache . Up = WallBase -> Up;
-	Buildings . Emplace(WallBase -> GetName(), Cache);
+	Global -> Buildings . Emplace(Key, Cache);
 	BuildType = nullptr;
 	WallBase = nullptr;
-	return true;
 }
 
-void UBuildSystem::Floor()
+void UBuildSystem::Floor_Implementation()
 {
 	if (BuildType != FStatic::Floor) {
 		this -> UnSetBuild();
 	}
 	if (FloorBase == nullptr) {
-		FloorBase = GetWorld() -> SpawnActor<AFloor>(FVector(FStatic::Zero, FStatic::Zero, FStatic::FiveThousand),
-		                                             FRotator(FStatic::Zero));
-		FloorBase -> SetCollision(ECollisionEnabled::QueryOnly);
-
+		FActorSpawnParameters Parameters;
+		Parameters . Owner = Player;
+		Parameters . bNoFail = true;
+		FloorBase = GetWorld() -> SpawnActor<AFloor>(
+			FVector(FStatic::Zero, FStatic::Zero, FStatic::FiveThousand),
+			FRotator(FStatic::Zero),
+			Parameters
+		);
 		BuildType = FStatic::Floor;
 	} else {
 		this -> UnSetBuild();
 	}
 }
 
-void UBuildSystem::FloorBlurAttach()
+void UBuildSystem::FloorBlurAttach_Implementation(FHitResult RayHit, int CID, int UID)
 {
 	if (FloorBase != nullptr) {
 		//视角旋转的Yaw值是极坐标ρ
@@ -496,7 +590,7 @@ void UBuildSystem::FloorBlurAttach()
 		if (Angle <= FStatic::Zero) {
 			Angle = FStatic::EightyNine;
 		}
-		BuildDistance = FMath::Tan(FMath::DegreesToRadians(Angle)) * MainLocation . Z;
+		BuildDistance = FMath::Tan(FMath::DegreesToRadians(Angle)) * FStatic::Hundred;
 		if (BuildDistance > FStatic::Thousand) {
 			BuildDistance = FStatic::Thousand;
 		}
@@ -517,110 +611,139 @@ void UBuildSystem::FloorBlurAttach()
 		}
 		BuildLocation = FVector(MainLocation . X, MainLocation . Y, FStatic::Zero) + FVector(X, Y, Z);
 		// 光线击中处附着
-		const bool IsHit = Player -> RayHit . IsValidBlockingHit();
-		if (IsHit) {
-			const FString HitName = Player -> RayHit . GetActor() -> GetName();
+		if (RayHit . IsValidBlockingHit()) {
+			const FString HitName = RayHit . GetActor() -> GetName();
 			const bool IsFoundation = FStr::IsContain(HitName, FStatic::Foundation);
 			const bool IsWall = FStr::IsContain(HitName, FStatic::Wall);
 			const bool IsFloor = FStr::IsContain(HitName, FStatic::Floor);
-			FString AttachSide = Player -> RayHit . GetComponent() -> GetName();
+			FString AttachSide = RayHit . GetComponent() -> GetName();
 			if (IsFoundation || IsFloor) {
-				const float Side = FloorBase -> HalfXY * FStatic::Two;
-				float CalZ = FStatic::Zero;
-				if (IsFoundation) {
-					CalZ = FStatic::TwentyFive;
+				const FString Index = RayHit . GetActor() -> Tags[FStatic::Zero] . ToString();
+				const FBuildings BuildBlock = Global -> Buildings[Index];
+				bool bIsAlly = false;
+				if (BuildBlock . CID == CID && CID != FStatic::Zero) {
+					bIsAlly = true;
 				}
-				if (IsFloor) {
-					CalZ = FStatic::Zero;
+				if (BuildBlock . CID == FStatic::Zero && BuildBlock . UID == UID) {
+					bIsAlly = true;
 				}
-				const FBuildings BuildBlock = Buildings[HitName];
-				if (AttachSide == FStatic::Right && !BuildBlock . Right) {
-					const float CalX = FMath::Cos(
-							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
-						Side;
-					const float CalY = FMath::Sin(
-							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
-						Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::Low && !BuildBlock . Low) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::Left && !BuildBlock . Left) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::Up && !BuildBlock . Up) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::DownWallRight && !BuildBlock . Right) {
-					const float CalX = FMath::Cos(
-							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
-						Side;
-					const float CalY = FMath::Sin(
-							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
-						Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::DownWallLow && !BuildBlock . Low) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::DownWallLeft && !BuildBlock . Left) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
-				}
-				if (AttachSide == FStatic::DownWallUp && !BuildBlock . Up) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				if (bIsAlly) {
+					const float Side = FloorBase -> HalfXY * FStatic::Two;
+					float CalZ = FStatic::Zero;
+					if (IsFoundation) {
+						CalZ = FStatic::TwentyFive;
+					}
+					if (IsFloor) {
+						CalZ = FStatic::Zero;
+					}
+					if (AttachSide == FStatic::Right && !BuildBlock . Right) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Low && !BuildBlock . Low) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Left && !BuildBlock . Left) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Up && !BuildBlock . Up) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::DownWallRight && !BuildBlock . Right) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::Ninety)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::DownWallLow && !BuildBlock . Low) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::DownWallLeft && !BuildBlock . Left) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::TwoHundredAndSeventy)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::DownWallUp && !BuildBlock . Up) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, CalZ);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
 				}
 			}
 			if (IsWall) {
-				const float Side = FloorBase -> HalfXY;
-				const FBuildings BuildBlock = Buildings[HitName];
-				if (AttachSide == FStatic::Front && !BuildBlock . Front) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::TwoHundredAndFour);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				const FString Index = RayHit . GetActor() -> Tags[FStatic::Zero] . ToString();
+				const FBuildings BuildBlock = Global -> Buildings[Index];
+				bool bIsAlly = false;
+				if (BuildBlock . CID == CID && CID != FStatic::Zero) {
+					bIsAlly = true;
 				}
-				if (AttachSide == FStatic::Back && !BuildBlock . Back) {
-					const float CalX = FMath::Cos(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					const float CalY = FMath::Sin(
-						FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) * Side;
-					BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::TwoHundredAndFour);
-					BuildRotation = BuildBlock . Rotation . Yaw;
+				if (BuildBlock . CID == FStatic::Zero && BuildBlock . UID == UID) {
+					bIsAlly = true;
+				}
+				if (bIsAlly) {
+					const float Side = FloorBase -> HalfXY;
+					if (AttachSide == FStatic::Front && !BuildBlock . Front) {
+						const float CalX = FMath::Cos(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						const float CalY = FMath::Sin(
+							FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::HundredAndEighty)) * Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::TwoHundredAndFour);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
+					if (AttachSide == FStatic::Back && !BuildBlock . Back) {
+						const float CalX = FMath::Cos(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						const float CalY = FMath::Sin(
+								FMath::DegreesToRadians(BuildBlock . Rotation . Yaw + FStatic::ThreeHundredAndSixty)) *
+							Side;
+						BuildLocation = BuildBlock . Location + FVector(CalX, CalY, FStatic::TwoHundredAndFour);
+						BuildRotation = BuildBlock . Rotation . Yaw;
+					}
 				}
 			}
 		}
@@ -629,61 +752,54 @@ void UBuildSystem::FloorBlurAttach()
 	}
 }
 
-bool UBuildSystem::FloorBuild()
+void UBuildSystem::FloorBuild_Implementation(int CID, int UID)
 {
 	if (FloorBase == nullptr) {
-		return false;
+		return;
 	}
 	if (FloorBase -> IsBlock) {
-		//TODO UI显示被阻挡无法放置
-		FLib::Echo(TEXT("被阻挡无法放置！"));
-		return false;
+		Pop(Lang . Get(FStatic::BuildBlockedText), FStatic::WarningFontMaterial);
+		return;
 	}
 	if (!FloorBase -> IsAttach) {
-		//TODO UI显示被阻挡无法放置
-		FLib::Echo(TEXT("未附着无法放置！"));
-		return false;
+		Pop(Lang . Get(FStatic::BuildNoFoundationText), FStatic::WarningFontMaterial);
+		return;
 	}
-	FloorBase -> StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
-	FloorBase -> StaticMeshComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> BoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> RightSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> LowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> LeftSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> UpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> DownRightSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> DownLowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> DownLeftSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> DownUpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
-	FloorBase -> SetCollision(ECollisionEnabled::QueryAndPhysics);
-	FloorBase -> SetMaterial(FStatic::WoodMaterial);
-	FloorBase -> PrimaryActorTick . bCanEverTick = false;
+	if (FloorBase -> EnemyRange) {
+		Pop(Lang . Get(FStatic::BuildNearEnemyText), FStatic::WarningFontMaterial);
+		return;
+	}
+	FString Key = CreateBuildingKey(FStatic::Floor);
+	FloorBase -> Key = Key;
 	FloorBase -> IsSet = true;
 	FBuildings Cache;
+	Cache . UID = UID;
+	Cache . CID = CID;
+	Cache . InGameKey = Key;
 	Cache . HealthPoints = FStatic::Hundred;
 	Cache . Type . Floor = true;
 	Cache . Building = FloorBase;
 	Cache . Location = BuildLocation;
 	Cache . Rotation = FloorBase -> GetActorRotation();
 	for (auto& Item : FloorBase -> BlockSideCache) {
-		if (Buildings[Item . Key] . Type . Foundation || Buildings[Item . Key] . Type . Floor) {
+		if (Global -> Buildings[Item . Key] . Type . Foundation || Global -> Buildings[Item . Key] . Type . Floor) {
 			if (Item . Value . Right) {
-				Buildings[Item . Key] . Right = Item . Value . Right;
+				Global -> Buildings[Item . Key] . Right = Item . Value . Right;
 			}
 			if (Item . Value . Low) {
-				Buildings[Item . Key] . Low = Item . Value . Low;
+				Global -> Buildings[Item . Key] . Low = Item . Value . Low;
 			}
 			if (Item . Value . Left) {
-				Buildings[Item . Key] . Left = Item . Value . Left;
+				Global -> Buildings[Item . Key] . Left = Item . Value . Left;
 			}
 			if (Item . Value . Up) {
-				Buildings[Item . Key] . Up = Item . Value . Up;
+				Global -> Buildings[Item . Key] . Up = Item . Value . Up;
 			}
 		} else {
 			if (Item . Value . Front) {
-				Buildings[Item . Key] . Front = Item . Value . Front;
+				Global -> Buildings[Item . Key] . Front = Item . Value . Front;
 			} else if (Item . Value . Back) {
-				Buildings[Item . Key] . Back = Item . Value . Back;
+				Global -> Buildings[Item . Key] . Back = Item . Value . Back;
 			}
 		}
 	}
@@ -699,8 +815,7 @@ bool UBuildSystem::FloorBuild()
 	Cache . DownWallLow = FloorBase -> DownWallLow;
 	Cache . DownWallLeft = FloorBase -> DownWallLeft;
 	Cache . DownWallUp = FloorBase -> DownWallUp;
-	Buildings . Emplace(FloorBase -> GetName(), Cache);
+	Global -> Buildings . Emplace(Key, Cache);
 	BuildType = nullptr;
 	FloorBase = nullptr;
-	return true;
 }

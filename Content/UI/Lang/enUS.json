@@ -1,0 +1,16 @@
+{
+  "Test" : "Test Message",
+  "HintInputEmail" : "Please Enter Your Email",
+  "HintInputPassword" : "Please Enter Your Password",
+  "LoginButton" : "Login",
+  "QuitButton" : "Quit",
+  "JoinButton" : "Join",
+  "ServerListReadFail" : "Server List Read Failed",
+  "NeverSelect" : "None Is Selected, Please Select",
+  "EnteringServer" : "Entering Server",
+  "NewJoinBroadcast" : " Joined Server",
+  "LostConnection" : "Lost Connection, Backing To List",
+  "BuildBlocked" : "Blocked, Can't Build",
+  "BuildNearEnemy" : "Enemy Base Around, Can't Build",
+  "BuildNoFoundation" : "No Foundation, Can't Build"
+}

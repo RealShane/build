@@ -16,7 +16,6 @@ public:
 	bool static IsOverlapContain(FString Value);
 	bool static IsSideBlock(FString Side, const FBuildings* BuildBlock);
 	bool static IsWallSideBlock(FString Side, const FBuildings* BuildBlock);
-	bool static IsLand(FString Value);
 	bool static IsContain(FString Value, FString Key);
 
 	FBlockActor static SetSide(FString Key, FBlockActor Side, bool IsRemove = false);

@@ -9,6 +9,9 @@ struct FRoute
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Token;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString Route;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -53,20 +53,6 @@ bool FStr::IsOverlapContain(const FString Value)
 	return false;
 }
 
-bool FStr::IsLand(const FString Value)
-{
-	if (IsContain(Value, FStatic::Wall)) {
-		return true;
-	}
-	if (IsContain(Value, FStatic::Floor)) {
-		return true;
-	}
-	if (IsContain(Value, FStatic::Foundation)) {
-		return true;
-	}
-	return false;
-}
-
 bool FStr::IsSideBlock(const FString Side, const FBuildings* BuildBlock)
 {
 	if (Side == FStatic::Front && BuildBlock -> Front) {

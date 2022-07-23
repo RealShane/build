@@ -10,6 +10,11 @@ AWall::AWall()
 	OverlapCount = FStatic::Zero;
 	AttachCount = FStatic::Zero;
 
+	bReplicates = true;
+	bNetLoadOnClient = true;
+	bAlwaysRelevant = true;
+	// NetCullDistanceSquared = 1000;
+
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::BoxComponent);
 	BoxComponent -> InitBoxExtent(FVector(FStatic::Five, FStatic::HundredAndNinety, FStatic::HundredAndNinety));
 	SetRootComponent(BoxComponent);
@@ -40,24 +45,29 @@ AWall::AWall()
 	StaticMeshComponent -> SetStaticMesh(Floor . Object);
 	StaticMeshComponent -> SetRelativeScale3D(FVector(HalfX / XYZScale, HalfYZ / XYZScale, HalfYZ / XYZScale));
 	StaticMeshComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -HalfYZ));
+	StaticMeshComponent -> SetOnlyOwnerSee(true);
 }
 
 void AWall::BeginPlay()
 {
 	Super::BeginPlay();
-	this -> SetMaterial(FStatic::BlurMaterial);
-	BoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AWall::OnOverlapBegin);
-	BoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AWall::OnOverlapEnd);
+	SetReplicateMovement(true);
+	Local = GetGameInstance() -> GetSubsystem<ULocal>();
+	Global = Global = GetWorld() -> GetGameState<AGlobal>();
+	SetMaterial(FStatic::BlurMaterial);
+	SetCollision(ECollisionEnabled::QueryOnly);
+	BoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::OnOverlapBegin);
+	BoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::OnOverlapEnd);
 
-	FrontBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AWall::FrontOverlapBegin);
-	FrontBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AWall::FrontOverlapEnd);
-	BackBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AWall::BackOverlapBegin);
-	BackBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AWall::BackOverlapEnd);
+	FrontBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::FrontOverlapBegin);
+	FrontBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::FrontOverlapEnd);
+	BackBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::BackOverlapBegin);
+	BackBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::BackOverlapEnd);
 
-	LowSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AWall::LowOverlapBegin);
-	LowSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AWall::LowOverlapEnd);
-	UpSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AWall::UpOverlapBegin);
-	UpSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AWall::UpOverlapEnd);
+	LowSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::LowOverlapBegin);
+	LowSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::LowOverlapEnd);
+	UpSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::UpOverlapBegin);
+	UpSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::UpOverlapEnd);
 }
 
 void AWall::Tick(float DeltaTime)
@@ -65,7 +75,32 @@ void AWall::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (!IsSet) {
 		this -> LandHeight();
+		if (GetNetMode() == NM_DedicatedServer || GetOwner() -> GetLocalRole() != ROLE_AutonomousProxy) {
+			return;
+		}
+		this -> RangeDetectRay();
+	} else {
+		PrimaryActorTick . SetTickFunctionEnable(false);
+		SetCollision(ECollisionEnabled::QueryAndPhysics);
+		SetMaterial(FStatic::WoodMaterial);
+		Tags . Emplace(Key);
+		StaticMeshComponent -> SetOnlyOwnerSee(false);
+		StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
+		StaticMeshComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		BoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		FrontBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		BackBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		LowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		UpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
 	}
+}
+
+void AWall::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass, Key);
+	DOREPLIFETIME(ThisClass, IsSet);
+	DOREPLIFETIME(ThisClass, EnemyRange);
 }
 
 void AWall::SetCollision(const ECollisionEnabled::Type Type) const
@@ -150,8 +185,14 @@ void AWall::LowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAc
 		OtherComp -> GetName(), FStatic::Back)) {
 		return;
 	}
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		this -> SetOwnSide(OtherActor -> GetName(), OtherComp -> GetName());
+	FString Name = OtherActor -> GetName();
+	const FString CompName = OtherComp -> GetName();
+	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName) || !OtherActor -> Tags . Num()) {
+		return;
+	}
+	Name = OtherActor -> Tags[FStatic::Zero] . ToString();
+	if (Save(Name, CompName)) {
+		this -> SetOwnSide(Name, CompName);
 	}
 }
 
@@ -162,8 +203,14 @@ void AWall::LowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActo
 		OtherComp -> GetName(), FStatic::Back)) {
 		return;
 	}
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		this -> SetOwnSide(OtherActor -> GetName(), OtherComp -> GetName(), true);
+	FString Name = OtherActor -> GetName();
+	const FString CompName = OtherComp -> GetName();
+	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName) || !OtherActor -> Tags . Num()) {
+		return;
+	}
+	Name = OtherActor -> Tags[FStatic::Zero] . ToString();
+	if (Remove(Name, CompName)) {
+		this -> SetOwnSide(Name, CompName, true);
 	}
 }
 
@@ -176,8 +223,14 @@ void AWall::UpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AAct
 			OtherComp -> GetName(), FStatic::Back)) {
 		return;
 	}
-	if (Save(OtherActor -> GetName(), OtherComp -> GetName())) {
-		this -> SetOwnSide(OtherActor -> GetName(), OtherComp -> GetName());
+	FString Name = OtherActor -> GetName();
+	const FString CompName = OtherComp -> GetName();
+	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName) || !OtherActor -> Tags . Num()) {
+		return;
+	}
+	Name = OtherActor -> Tags[FStatic::Zero] . ToString();
+	if (Save(Name, CompName)) {
+		this -> SetOwnSide(Name, CompName);
 	}
 }
 
@@ -189,25 +242,21 @@ void AWall::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor
 			OtherComp -> GetName(), FStatic::Back)) {
 		return;
 	}
-	if (Remove(OtherActor -> GetName(), OtherComp -> GetName())) {
-		this -> SetOwnSide(OtherActor -> GetName(), OtherComp -> GetName(), true);
+	FString Name = OtherActor -> GetName();
+	const FString CompName = OtherComp -> GetName();
+	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName) || !OtherActor -> Tags . Num()) {
+		return;
+	}
+	Name = OtherActor -> Tags[FStatic::Zero] . ToString();
+	if (Remove(Name, CompName)) {
+		this -> SetOwnSide(Name, CompName, true);
 	}
 }
 
 bool AWall::Save(FString Name, FString CompName)
 {
-	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName)) {
-		return false;
-	}
 	AttachCount += FStatic::One;
 	IsAttach = true;
-	if (!BlockCountCache . Contains(Name + CompName)) {
-		BlockCountCache . Emplace(Name + CompName, FStatic::One);
-	} else {
-		int BlockCount = BlockCountCache[Name + CompName];
-		BlockCount += FStatic::One;
-		BlockCountCache . Emplace(Name + CompName, BlockCount);
-	}
 	FBlockActor BlockActor;
 	if (!BlockSideCache . Contains(Name)) {
 		BlockSideCache . Emplace(Name, FStr::SetSide(CompName, BlockActor));
@@ -220,22 +269,9 @@ bool AWall::Save(FString Name, FString CompName)
 
 bool AWall::Remove(FString Name, FString CompName)
 {
-	if (IsSet || !FStr::IsBuildContain(Name) || Name == GetName() || !FStr::IsSideContain(CompName)) {
-		return false;
-	}
 	AttachCount -= FStatic::One;
 	if (AttachCount <= FStatic::Zero) {
 		IsAttach = false;
-	}
-	if (BlockCountCache . Contains(Name + CompName)) {
-		int BlockCount = BlockCountCache[Name + CompName];
-		BlockCount -= FStatic::One;
-		if (BlockCount <= FStatic::Zero) {
-			BlockCountCache . Remove(Name + CompName);
-		} else {
-			BlockCountCache . Emplace(Name + CompName, BlockCount);
-			return false;
-		}
 	}
 	if (!BlockSideCache . Contains(Name)) {
 		return true;
@@ -299,7 +335,8 @@ float AWall::RayMax(bool IsUp)
 void AWall::SetOwnSide(const FString Name, const FString Side, const bool IsRemove)
 {
 	if (FStr::IsContain(Name, FStatic::Foundation) || FStr::IsContain(Name, FStatic::Floor)) {
-		if (!IsRemove && !FStr::IsContain(Side, FStatic::Down)) {
+		// if (!IsRemove && !FStr::IsContain(Side, FStatic::Down)) {
+		if (!IsRemove) {
 			Low = true;
 		} else {
 			Low = false;
@@ -319,4 +356,48 @@ void AWall::SetOwnSide(const FString Name, const FString Side, const bool IsRemo
 			}
 		}
 	}
+}
+
+void AWall::RangeDetectRay()
+{
+	if (!Local -> UID || GetNetMode() == NM_DedicatedServer) {
+		return;
+	}
+	FHitResult Center;
+	FVector CenterStart = GetActorLocation();
+	FCollisionQueryParams Params;
+	Params . AddIgnoredActor(this);
+	Params . bTraceComplex = false;
+	bool bIsHit = GetWorld() -> LineTraceSingleByProfile(
+		Center, CenterStart,
+		-GetActorUpVector() * FStatic::Hundred + CenterStart,
+		*(FStatic::Foundation + FStatic::Range), Params
+	);
+	if (!bIsHit) {
+		EnemyRange = false;
+		return;
+	}
+	if (!FStr::IsContain(Center . GetComponent() -> GetName(), FStatic::Range)) {
+		EnemyRange = false;
+		return;
+	}
+	if (!Center . GetActor() -> Tags . Num()) {
+		EnemyRange = false;
+		return;
+	}
+	FString Index = Center . GetActor() -> Tags[FStatic::Zero] . ToString();
+	JudgeEnemyRange(Index, Local -> CID, Local -> UID);
+}
+
+void AWall::JudgeEnemyRange_Implementation(const FString& Index, int CID, int UID)
+{
+	if (Global -> Buildings[Index] . CID != CID && CID != FStatic::Zero) {
+		EnemyRange = true;
+		return;
+	}
+	if (Global -> Buildings[Index] . CID == FStatic::Zero && Global -> Buildings[Index] . UID != UID) {
+		EnemyRange = true;
+		return;
+	}
+	EnemyRange = false;
 }

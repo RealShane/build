@@ -1,12 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Net/UnrealNetwork.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
+#include "Build/GameMode/Global.h"
+#include "Build/GameMode/Local.h"
+#include "Struct/BlockActor.h"
 #include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
 #include "Build/Lib/Str.h"
-#include "Struct/BlockActor.h"
 #include "Foundation.generated.h"
 
 UCLASS()
@@ -22,6 +25,18 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditInstanceOnly, Replicated, Category = "BaseConfig")
+	FString Key;
+
+	//是否已放置
+	UPROPERTY(EditInstanceOnly, Replicated, Category = "BaseConfig")
+	bool IsSet = false;
+
+	UPROPERTY(EditInstanceOnly, Replicated, Category = "BaseConfig")
+	bool EnemyRange = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UStaticMeshComponent* StaticMeshComponent;
@@ -59,19 +74,12 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsBlock = false;
 
-	//是否已放置
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsSet = false;
-
 	//是否附着
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsAttach = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	int OverlapCount;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	int AttachCount;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TMap<FString, FBlockActor> BlockSideCache;
@@ -133,9 +141,17 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString UpDetectCompName;
 
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	ULocal* Local;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	AGlobal* Global;
+
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision) const;
 
 	void SetMaterial(FString Value) const;
+
+	void SetRange();
 
 	UFUNCTION()
 	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
@@ -145,6 +161,15 @@ public:
 	UFUNCTION()
 	void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
 	                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void RangeOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                       class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                       const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void RangeOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+	                     class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void RightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
@@ -186,9 +211,15 @@ public:
 	void LowDetectRay();
 	void LeftDetectRay();
 	void UpDetectRay();
-	bool Save(FString Name, FString CompName);
-	bool Remove(FString Name, FString CompName);
+	UFUNCTION(Server, Reliable)
+	void Save(const FString& Name, const FString& CompName);
+	UFUNCTION(Server, Reliable)
+	void Remove(const FString& Name, const FString& CompName);
 
 	void LandHeight();
 	float RayMax(bool IsUp);
+
+	void RangeDetectRay();
+	UFUNCTION(Server, UnReliable)
+	void JudgeEnemyRange(const FString& Index, int CID, int UID);
 };

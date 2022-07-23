@@ -1,17 +1,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PlayerController.h"
-#include "JsonObjectConverter.h"
-#include "MainCharacter.h"
-#include "Build/Equips/Torch.h"
+#include "Build/UI/Notify/PopLayer.h"
 #include "Build/Build/BuildSystem.h"
-#include "Build/Lib/Lib.h"
+#include "Build/GameMode/Global.h"
+#include "Build/GameMode/Local.h"
+#include "Build/Equips/Torch.h"
+#include "Build/UI/UIFacade.h"
 #include "Build/Lib/NetWork.h"
-#include "Struct/PlayerInfo.h"
-#include "Struct/Route.h"
+#include "Build/Lib/Lang.h"
+#include "MainCharacter.h"
+#include "Build/Lib/Lib.h"
 #include "MainController.generated.h"
 
 UCLASS()
@@ -28,17 +31,13 @@ public:
 
 	virtual void SetupInputComponent() override;
 
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsThirdView = true;
+	FLang Lang;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsJumpCouldPlay = true;
+	UUIFacade* UI;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsJogCouldPlay = true;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsIdleCouldPlay = true;
+	UPopLayer* PopLayer;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	float ForwardValue;
@@ -62,9 +61,23 @@ public:
 	bool EquipsLock = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UNetWork* NetWork;
+	bool MenuLock = false;
 
-protected:
+	// UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	// UNetWork* NetWork;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	ULocal* Local;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	AGlobal* Global;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	FLatentActionInfo LatentPong;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	double LastReceiveTime;
+
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void LookForward(float Value);
@@ -74,18 +87,23 @@ protected:
 	void PressTwo();
 	void PressThree();
 	void PressZero();
+	void PressTab();
 	void MouseLeft();
 	void MouseWheelUp();
 	void MouseWheelDown();
 	void MouseRight();
 	void Jump();
 	void StopJumping();
-	void MoveAnimSwitch();
-	void Connect();
-	void LocationSync();
+
+	UFUNCTION()
+	void HeartBeatPong();
 
 	UFUNCTION(exec)
 	void Print(int Bo);
 	bool B = false;
 	void UIRay();
+	UFUNCTION(Server, Unreliable)
+	void ReadBuilding(const FString& Index, const FString& HitCompName);
+	UFUNCTION(Client, Unreliable)
+	void PrintInClient(FBuildings Building, const FString& Index, const FString& HitCompName);
 };

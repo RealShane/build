@@ -4,25 +4,35 @@ AMainController::AMainController()
 {
 	InputComponent = CreateDefaultSubobject<UInputComponent>(*FStatic::InputComponent);
 	BuildSystem = CreateDefaultSubobject<UBuildSystem>(*FStatic::BuildSystem);
-	NetWork = CreateDefaultSubobject<UNetWork>(*FStatic::NetWork);
+	UI = CreateDefaultSubobject<UUIFacade>(*FStatic::UI);
+	// NetWork = CreateDefaultSubobject<UNetWork>(*FStatic::NetWork);
 }
 
 void AMainController::BeginPlay()
 {
 	Super::BeginPlay();
+	Local = GetGameInstance() -> GetSubsystem<ULocal>();
+	Global = GetWorld() -> GetGameState<AGlobal>();
 	Main = Cast<AMainCharacter>(GetCharacter());
+	PopLayer = UI -> GetInstance<UPopLayer>(*FStatic::PopLayerBP);
 	BuildSystem -> SetPlayer(Main);
 	this -> bShowMouseCursor = false;
-	NetWork -> Init(GetWorld());
-	this -> Connect();
+	// NetWork -> Init(GetWorld());
+	LatentPong . CallbackTarget = this;
+	LatentPong . ExecutionFunction = *FStatic::HeartBeatPongMethod;
+	LatentPong . Linkage = FStatic::One;
+	LatentPong . UUID = FStatic::TwoHundred;
 }
 
 void AMainController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	this -> LocationSync();
-	this -> MoveAnimSwitch();
-	this -> UIRay();
+	UIRay();
+	// FTimerHandle Handle;
+	// FTimerDelegate Delegate;
+	// Delegate . BindUObject(this, &ThisClass::HeartBeatPong);
+	// GetWorldTimerManager() . SetTimer(Handle, Delegate, FStatic::Five, true);
+	UKismetSystemLibrary::Delay(this, FStatic::Five, LatentPong);
 }
 
 void AMainController::SetupInputComponent()
@@ -40,6 +50,8 @@ void AMainController::SetupInputComponent()
 	InputComponent -> BindAction("Two", IE_Pressed, this, &AMainController::PressTwo);
 	InputComponent -> BindAction("Three", IE_Pressed, this, &AMainController::PressThree);
 	InputComponent -> BindAction("Zero", IE_Pressed, this, &AMainController::PressZero);
+	// 键盘按键
+	InputComponent -> BindAction("Tab", IE_Pressed, this, &AMainController::PressTab);
 	//鼠标左右中键
 	InputComponent -> BindAction("MouseLeft", IE_Pressed, this, &AMainController::MouseLeft);
 	InputComponent -> BindAction("MouseWheelUp", IE_Pressed, this, &AMainController::MouseWheelUp);
@@ -49,38 +61,47 @@ void AMainController::SetupInputComponent()
 
 void AMainController::MoveForward(float Value)
 {
+	if (MenuLock) {
+		ForwardValue = FStatic::Zero;
+		return;
+	}
 	ForwardValue = Value;
 	if (Value != FStatic::Zero) {
-		const FRotator Rotation = GetControlRotation();
-		const FRotator YawRotation(FStatic::Zero, Rotation . Yaw, FStatic::Zero);
+		const FRotator YawRotation(FStatic::Zero, GetControlRotation() . Yaw, FStatic::Zero);
 		const FVector Direction = FRotationMatrix(YawRotation) . GetUnitAxis(EAxis::X);
 		Main -> AddMovementInput(Direction, Value);
 	}
 	if (ForwardValue || RightValue) {
-		Main -> IsMoving = true;
+		Main -> Speed = FStatic::FiveHundred;
 	} else {
-		Main -> IsMoving = false;
+		Main -> Speed = FStatic::Zero;
 	}
 }
 
 void AMainController::MoveRight(float Value)
 {
+	if (MenuLock) {
+		RightValue = FStatic::Zero;
+		return;
+	}
 	RightValue = Value;
 	if (Value != FStatic::Zero) {
-		const FRotator Rotation = GetControlRotation();
-		const FRotator YawRotation(FStatic::Zero, Rotation . Yaw, FStatic::Zero);
+		const FRotator YawRotation(FStatic::Zero, GetControlRotation() . Yaw, FStatic::Zero);
 		const FVector Direction = FRotationMatrix(YawRotation) . GetUnitAxis(EAxis::Y);
 		Main -> AddMovementInput(Direction, Value);
 	}
 	if (ForwardValue || RightValue) {
-		Main -> IsMoving = true;
+		Main -> Speed = FStatic::FiveHundred;
 	} else {
-		Main -> IsMoving = false;
+		Main -> Speed = FStatic::Zero;
 	}
 }
 
 void AMainController::LookForward(float Value)
 {
+	if (MenuLock) {
+		return;
+	}
 	if (Value != FStatic::Zero) {
 		Main -> AddControllerPitchInput(Value);
 	}
@@ -88,6 +109,9 @@ void AMainController::LookForward(float Value)
 
 void AMainController::LookRight(float Value)
 {
+	if (MenuLock) {
+		return;
+	}
 	if (Value != FStatic::Zero) {
 		Main -> AddControllerYawInput(Value);
 	}
@@ -95,38 +119,52 @@ void AMainController::LookRight(float Value)
 
 void AMainController::Jump()
 {
-	//防止在空中继续按空格重复播放
-	if (!Main -> GetCharacterMovement() -> IsFalling()) {
-		Main -> AnimPlay(FStatic::JumpAnim);
+	if (MenuLock) {
+		return;
 	}
 	Main -> Jump();
 }
 
 void AMainController::StopJumping()
 {
+	if (MenuLock) {
+		return;
+	}
 	Main -> StopJumping();
 }
 
 void AMainController::PressOne()
 {
+	if (MenuLock) {
+		return;
+	}
 	BuildType = FStatic::Foundation;
 	BuildSystem -> SetBuild(BuildType);
 }
 
 void AMainController::PressTwo()
 {
+	if (MenuLock) {
+		return;
+	}
 	BuildType = FStatic::Wall;
 	BuildSystem -> SetBuild(BuildType);
 }
 
 void AMainController::PressThree()
 {
+	if (MenuLock) {
+		return;
+	}
 	BuildType = FStatic::Floor;
 	BuildSystem -> SetBuild(BuildType);
 }
 
 void AMainController::PressZero()
 {
+	if (MenuLock) {
+		return;
+	}
 	if (!EquipsLock) {
 		Torch = GetWorld() -> SpawnActor<ATorch>(Main -> GetActorLocation(), FRotator(FStatic::Zero));
 		Torch -> AttachToComponent(Main -> GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale,
@@ -138,10 +176,25 @@ void AMainController::PressZero()
 	EquipsLock = !EquipsLock;
 }
 
+void AMainController::PressTab()
+{
+	// AMainHUD* HUD = Cast<AMainHUD>(GetHUD());
+	// if (!MenuLock) {
+	// 	HUD -> OpenMenu();
+	// } else {
+	// 	HUD -> CloseMenu();
+	// }
+	// MenuLock = !MenuLock;
+}
+
 void AMainController::MouseLeft()
 {
 	if (BuildSystem -> IsBuildMode()) {
 		BuildSystem -> Building();
+		return;
+	}
+	if (!Main -> Punch && !Main -> GetCharacterMovement() -> IsFalling()) {
+		Main -> Punch = true;
 	}
 }
 
@@ -150,14 +203,15 @@ void AMainController::MouseWheelUp()
 	float ArmLength = Main -> SpringArmComponent -> TargetArmLength - FStatic::Fifty;
 	if (ArmLength > FStatic::SixHundred) {
 		ArmLength = FStatic::SixHundred;
-	} else if (ArmLength < FStatic::Zero) {
+	} else if (ArmLength <= FStatic::Zero) {
 		ArmLength = FStatic::Zero;
-		IsThirdView = false;
-		Main -> FirstPerson();
+		//转为第一人称时让身体跟着视角转动
+		Main -> CameraComponent -> bUsePawnControlRotation = true;
+		Main -> bUseControllerRotationYaw = true;
 	} else {
-		if (!IsThirdView) {
-			Main -> ThirdPerson();
-		}
+		//转为第三人称时取消身体跟着视角转动
+		Main -> CameraComponent -> bUsePawnControlRotation = false;
+		Main -> bUseControllerRotationYaw = false;
 	}
 	Main -> SpringArmComponent -> TargetArmLength = ArmLength;
 }
@@ -167,14 +221,15 @@ void AMainController::MouseWheelDown()
 	float ArmLength = Main -> SpringArmComponent -> TargetArmLength + FStatic::Fifty;
 	if (ArmLength > FStatic::SixHundred) {
 		ArmLength = FStatic::SixHundred;
-	} else if (ArmLength < FStatic::Zero) {
+	} else if (ArmLength <= FStatic::Zero) {
 		ArmLength = FStatic::Zero;
-		IsThirdView = false;
-		Main -> FirstPerson();
+		//转为第一人称时让身体跟着视角转动
+		Main -> CameraComponent -> bUsePawnControlRotation = true;
+		Main -> bUseControllerRotationYaw = true;
 	} else {
-		if (!IsThirdView) {
-			Main -> ThirdPerson();
-		}
+		//转为第三人称时取消身体跟着视角转动
+		Main -> CameraComponent -> bUsePawnControlRotation = false;
+		Main -> bUseControllerRotationYaw = false;
 	}
 	Main -> SpringArmComponent -> TargetArmLength = ArmLength;
 }
@@ -183,93 +238,69 @@ void AMainController::MouseRight()
 {
 	if (BuildSystem -> IsBuildMode()) {
 		BuildSystem -> SetBuild(BuildType);
-	}
-}
-
-
-void AMainController::MoveAnimSwitch()
-{
-	const bool IsFalling = Main -> GetCharacterMovement() -> IsFalling();
-	const bool IsCrouching = Main -> GetCharacterMovement() -> IsCrouching();
-	const bool IsPlaying = Main -> GetMesh() -> IsPlaying();
-	const bool IsJumpStart = Main -> GetPlayingAnimName() == FStatic::JumpAnim;
-	if (IsFalling && IsJumpCouldPlay) {
-		//切换下落动画
-		IsJumpCouldPlay = false;
-		IsJogCouldPlay = true;
-		IsIdleCouldPlay = true;
-		if (IsJumpStart && !IsPlaying) {
-			Main -> AnimPlay(FStatic::JumpLoopAnim);
-		}
-	} else if (ForwardValue != FStatic::Zero || RightValue != FStatic::Zero) {
-		//切换跑步动画
-		if (IsJogCouldPlay && !IsFalling) {
-			IsJumpCouldPlay = true;
-			IsJogCouldPlay = false;
-			IsIdleCouldPlay = true;
-			if (IsCrouching) {
-
-			} else {
-				Main -> AnimPlay(FStatic::Jog, true);
-			}
-		}
-	} else {
-		//切换待机动画
-		if (IsIdleCouldPlay && !IsFalling) {
-			IsJumpCouldPlay = true;
-			IsJogCouldPlay = true;
-			IsIdleCouldPlay = false;
-			if (IsCrouching) {
-
-			} else {
-				Main -> AnimPlay(FStatic::Idle, true);
-			}
-		}
+		BuildType = nullptr;
 	}
 }
 
 void AMainController::UIRay()
 {
+	if (!Main) {
+		return;
+	}
 	FVector Direction = Main -> CameraComponent -> GetForwardVector();
-	FHitResult Hit;
 	FVector Start = Main -> CameraComponent -> GetComponentLocation();
-	FCollisionQueryParams Params(FName(TEXT("")), false, nullptr);
-	Params . AddIgnoredActor(this);
 	// DrawDebugLine(GetWorld(), Start, Direction * FStatic::ThousandAndFiveHundred + Start, FColor::Red, false, 1, 0, 5);
-	if (!GetWorld() -> LineTraceSingleByObjectType(Hit, Start, Direction * FStatic::ThousandAndFiveHundred + Start,
-	                                               ECC_WorldStatic,
-	                                               Params)) {
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params . AddIgnoredActor(this);
+	Params . bTraceComplex = false;
+	GetWorld() -> LineTraceSingleByObjectType(
+		Hit, Start,
+		Direction * FStatic::ThousandAndFiveHundred + Start,
+		ECC_WorldStatic, Params
+	);
+	if (!Hit . IsValidBlockingHit()) {
 		Main -> RayHit . Reset();
 		return;
 	}
 	Main -> RayHit = Hit;
 	if (B) {
 		FString HitName = Hit . GetActor() -> GetName();
-		if (FStr::IsLand(HitName)) {
+		if (FStr::IsBuildContain(HitName)) {
 			FString HitCompName = Hit . GetComponent() -> GetName();
-			FBuildings Temp = BuildSystem -> Buildings[HitName];;
-			FLib::Echo("--------------------");
-			FLib::Echo("Name : " + HitName + "-" + HitCompName);
-			FLib::Echo("Right : " + FString::SanitizeFloat(Temp . Right));
-			FLib::Echo("Low : " + FString::SanitizeFloat(Temp . Low));
-			FLib::Echo("Left : " + FString::SanitizeFloat(Temp . Left));
-			FLib::Echo("Up : " + FString::SanitizeFloat(Temp . Up));
-			FLib::Echo("WallRight : " + FString::SanitizeFloat(Temp . WallRight));
-			FLib::Echo("WallLow : " + FString::SanitizeFloat(Temp . WallLow));
-			FLib::Echo("WallLeft : " + FString::SanitizeFloat(Temp . WallLeft));
-			FLib::Echo("WallUp : " + FString::SanitizeFloat(Temp . WallUp));
-			FLib::Echo("Front : " + FString::SanitizeFloat(Temp . Front));
-			FLib::Echo("Back : " + FString::SanitizeFloat(Temp . Back));
-			FLib::Echo("DownWallRight : " + FString::SanitizeFloat(Temp . DownWallRight));
-			FLib::Echo("DownWallLow : " + FString::SanitizeFloat(Temp . DownWallLow));
-			FLib::Echo("DownWallLeft : " + FString::SanitizeFloat(Temp . DownWallLeft));
-			FLib::Echo("DownWallUp : " + FString::SanitizeFloat(Temp . DownWallUp));
-		}
-		if (FStr::IsContain(HitName, FStatic::Guest)) {
-			FLib::Echo("--------------------");
-			FLib::Echo("Guest : " + HitName);
+			FString Index = Hit . GetActor() -> Tags[0] . ToString();
+			ReadBuilding(Index, HitCompName);
 		}
 	}
+}
+
+void AMainController::PrintInClient_Implementation(FBuildings Building, const FString& Index,
+	const FString& HitCompName)
+{
+	FLib::Echo("--------------------", false);
+	FLib::Echo("Name : " + Index + "-" + HitCompName, false);
+	FLib::Echo("Right : " + FString::SanitizeFloat(Building . Right), false);
+	FLib::Echo("Low : " + FString::SanitizeFloat(Building . Low), false);
+	FLib::Echo("Left : " + FString::SanitizeFloat(Building . Left), false);
+	FLib::Echo("Up : " + FString::SanitizeFloat(Building . Up), false);
+	FLib::Echo("WallRight : " + FString::SanitizeFloat(Building . WallRight), false);
+	FLib::Echo("WallLow : " + FString::SanitizeFloat(Building . WallLow), false);
+	FLib::Echo("WallLeft : " + FString::SanitizeFloat(Building . WallLeft), false);
+	FLib::Echo("WallUp : " + FString::SanitizeFloat(Building . WallUp), false);
+	FLib::Echo("Front : " + FString::SanitizeFloat(Building . Front), false);
+	FLib::Echo("Back : " + FString::SanitizeFloat(Building . Back), false);
+	FLib::Echo("DownWallRight : " + FString::SanitizeFloat(Building . DownWallRight), false);
+	FLib::Echo("DownWallLow : " + FString::SanitizeFloat(Building . DownWallLow), false);
+	FLib::Echo("DownWallLeft : " + FString::SanitizeFloat(Building . DownWallLeft), false);
+	FLib::Echo("DownWallUp : " + FString::SanitizeFloat(Building . DownWallUp), false);
+}
+
+void AMainController::ReadBuilding_Implementation(const FString& Index, const FString& HitCompName)
+{
+	if (!Global -> Buildings . Num()) {
+		return;
+	}
+	PrintInClient(Global -> Buildings[Index], Index, HitCompName);
 }
 
 void AMainController::Print(const int Bo)
@@ -281,49 +312,18 @@ void AMainController::Print(const int Bo)
 	}
 }
 
-void AMainController::Connect()
+void AMainController::HeartBeatPong()
 {
-	FString Params;
-	FString Data;
-	const FVector Location = Main -> GetActorLocation();
-	const FRotator Rotation = Main -> GetActorRotation();
-	FPlayerInfo PlayerInfo;
-	PlayerInfo . Name = FDateTime::UtcNow() . ToString(*FStatic::DateTime);
-	PlayerInfo . LocationX = Location . X;
-	PlayerInfo . LocationY = Location . Y;
-	PlayerInfo . LocationZ = Location . Z;
-	PlayerInfo . RotationPitch = Rotation . Pitch;
-	PlayerInfo . RotationYaw = Rotation . Yaw;
-	PlayerInfo . RotationRoll = Rotation . Roll;
-	FJsonObjectConverter::UStructToJsonObjectString(PlayerInfo, Data);
-	FRoute Route;
-	Route.Route = FStatic::FreshJoin;
-	Route.Data = Data;
-	FJsonObjectConverter::UStructToJsonObjectString(Route, Params);
-	NetWork -> Send(Params);
-}
-
-void AMainController::LocationSync()
-{
-	if (!Main -> IsMoving && !Main -> GetCharacterMovement() -> IsFalling()) {
+	if (GetLocalRole() != ROLE_AutonomousProxy || GetNetMode() == NM_DedicatedServer) {
 		return;
 	}
-	FString Params;
-	FString Data;
-	const FVector Location = Main -> GetActorLocation();
-	const FRotator Rotation = Main -> GetActorRotation();
-	FPlayerInfo PlayerInfo;
-	PlayerInfo . Name = FDateTime::UtcNow() . ToString(*FStatic::DateTime);
-	PlayerInfo . LocationX = Location . X;
-	PlayerInfo . LocationY = Location . Y;
-	PlayerInfo . LocationZ = Location . Z;
-	PlayerInfo . RotationPitch = Rotation . Pitch;
-	PlayerInfo . RotationYaw = Rotation . Yaw;
-	PlayerInfo . RotationRoll = Rotation . Roll;
-	FJsonObjectConverter::UStructToJsonObjectString(PlayerInfo, Data);
-	FRoute Route;
-	Route.Route = FStatic::Move;
-	Route.Data = Data;
-	FJsonObjectConverter::UStructToJsonObjectString(Route, Params);
-	NetWork -> Send(Params);
+	if (GetNetConnection() -> LastReceiveTime == LastReceiveTime) {
+		PopLayer -> Pop(Lang . Get(FStatic::LostConnectionText), FStatic::WarningFontMaterial);
+		Local -> LostConnection = true;
+		const FSoftObjectPath Path(*FStatic::StartMap);
+		const TSoftObjectPtr<UWorld> Map(Path);
+		UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), Map, true);
+		return;
+	}
+	LastReceiveTime = GetNetConnection() -> LastReceiveTime;
 }

@@ -1,16 +1,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
-#include "Camera/CameraComponent.h"
+#include "JsonObjectConverter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
+#include "Build/UI/Notify/PopLayer.h"
+#include "Build/GameMode/Local.h"
+#include "Build/Lib/Request.h"
+#include "Build/UI/UIFacade.h"
 #include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
-#include "Build/Lib/Request.h"
+#include "Login.h"
+#include "Menu.h"
 #include "Camera.generated.h"
 
 UCLASS()
-class BUILD_API ACamera : public APawn
+class BUILD_API ACamera : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -23,13 +30,26 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	//摄像机
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UCameraComponent* CameraComponent;
+	ULocal* Local;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	URequest* Request;
+	
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UUIFacade* UI;
 
-	static void Start(const UWorld* World);
-	void Quit() const;
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	ULogin* Login;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UMenu* Menu;
+	
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UPopLayer* PopLayer;
+
+	void SwitchToServerList();
+
+	UFUNCTION()
+	void Pop(FString Message, FString Color);
 };

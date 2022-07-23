@@ -1,12 +1,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
+#include "Json/Public/Json.h"
+#include "JsonObjectConverter.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Json/Public/Serialization/JsonReader.h"
+#include "Json/Public/Serialization/JsonSerializer.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Build/GameMode/Struct/User.h"
+#include "Build/UI/Notify/PopNotice.h"
+#include "Build/UI/Notify/PopLayer.h"
+#include "Build/Build/Foundation.h"
+#include "Build/GameMode/Global.h"
+#include "Build/GameMode/Local.h"
+#include "Build/UI/Main/Main.h"
+#include "Build/UI/UIFacade.h"
+#include "Build/Build/Floor.h"
+#include "Build/Build/Wall.h"
 #include "Build/Lib/Static.h"
+#include "Build/Lib/Lang.h"
 #include "Build/Lib/Lib.h"
 #include "MainCharacter.generated.h"
 
@@ -24,11 +40,28 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	FLang Lang;
 
-	//是否移动
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsMoving = false;
+	float Health;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UUIFacade* UI;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UMain* MainUI;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UPopLayer* PopLayer;
+	
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	UPopNotice* PopNotice;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	ULocal* Local;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	AGlobal* Global;
 
 	//射线击中物
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
@@ -46,17 +79,18 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UCameraComponent* CameraComponent;
 
+	// 蓝图动画
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	UAnimSequence* AnimSequence;
+	float Speed;
 
-	void AnimPlay(FString Value, bool loop = false);
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	bool Punch;
 
-	FString GetPlayingAnimName() const;
+	void Join();
 
-	void ThirdPerson();
-	void FirstPerson();
+	UFUNCTION(Server, Reliable)
+	void AddPlayerToServer(const FString& Key, FUser Value);
 
-private:
-	void Construct();
-	void CreateModel() const;
+	UFUNCTION(NetMulticast, Reliable)
+	void JoinBroadcast(const FString& Token, const FString& NickName);
 };

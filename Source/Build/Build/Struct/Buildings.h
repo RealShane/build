@@ -11,6 +11,15 @@ struct FBuildings
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString InGameKey;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int UID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int CID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HealthPoints = FStatic::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

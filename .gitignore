@@ -6,8 +6,13 @@
 /Content/Collections
 /Content/Developers
 /Content/StarterContent
+/Content/Assets
+/Content/__ExternalActors__
+/Content/__ExternalObjects__
+/Content/LevelPrototyping
 /DerivedDataCache
 /Intermediate
+/Build
 /Plugins
 /Saved
-Demo.sln
+/Script

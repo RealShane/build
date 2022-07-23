@@ -1,12 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Net/UnrealNetwork.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
+#include "Build/GameMode/Global.h"
+#include "Build/GameMode/Local.h"
+#include "Struct/BlockActor.h"
 #include "Build/Lib/Static.h"
 #include "Build/Lib/Lib.h"
 #include "Build/Lib/Str.h"
-#include "Struct/BlockActor.h"
 #include "Wall.generated.h"
 
 UCLASS()
@@ -22,6 +25,18 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditInstanceOnly, Replicated, Category = "BaseConfig")
+	FString Key;
+
+	//是否已放置
+	UPROPERTY(EditInstanceOnly, Replicated, Category = "BaseConfig")
+	bool IsSet = false;
+
+	UPROPERTY(EditInstanceOnly, Replicated, Category = "BaseConfig")
+	bool EnemyRange = false;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	UStaticMeshComponent* StaticMeshComponent;
@@ -57,10 +72,6 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsBlock = false;
 
-	//是否已放置
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	bool IsSet = false;
-
 	//是否附着
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool IsAttach = false;
@@ -73,9 +84,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	TMap<FString, FBlockActor> BlockSideCache;
-
-	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
-	TMap<FString, int> BlockCountCache;
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	bool Front = false;
@@ -109,6 +117,12 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
 	FString UpDetectCompName;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	ULocal* Local;
+
+	UPROPERTY(EditInstanceOnly, Category = "BaseConfig")
+	AGlobal* Global;
 
 	void SetCollision(ECollisionEnabled::Type Type = ECollisionEnabled::NoCollision) const;
 
@@ -166,4 +180,7 @@ public:
 	float RayMax(bool IsUp);
 
 	void SetOwnSide(FString Name, FString Side, bool IsRemove = false);
+	void RangeDetectRay();
+	UFUNCTION(Server, UnReliable)
+	void JudgeEnemyRange(const FString& Index, int CID, int UID);
 };

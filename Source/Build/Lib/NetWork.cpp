@@ -2,13 +2,10 @@
 
 UNetWork::UNetWork()
 {
-	Socket = FWebSocketsModule::Get() . CreateWebSocket(FStatic::WSURL, FStatic::WS);
-	Socket -> OnConnected() . AddUObject(this, &UNetWork::OnConnected);
-	Socket -> OnConnectionError() . AddUObject(this, &UNetWork::OnConnectionError);
-	Socket -> OnMessage() . AddUObject(this, &UNetWork::OnMessage);
-	Socket -> OnMessageSent() . AddUObject(this, &UNetWork::OnMessageSent);
-	Socket -> OnClosed() . AddUObject(this, &UNetWork::OnClosed);
-	Socket -> Connect();
+	if (!FModuleManager::Get() . IsModuleLoaded(*FStatic::WebSockets)) {
+		FModuleManager::Get() . LoadModule(*FStatic::WebSockets);
+	}
+	Ping = FStatic::Zero;
 }
 
 void UNetWork::BeginPlay()
@@ -18,22 +15,33 @@ void UNetWork::BeginPlay()
 
 void UNetWork::Init(UWorld* Main)
 {
-	this -> World = Main;
+	World = Main;
+	Local = World -> GetGameInstance() -> GetSubsystem<ULocal>();
+	Token = Local -> Token;
+	TMap<FString, FString> Header;
+	Header . Emplace(FStatic::Token, Token);
+	Socket = FWebSocketsModule::Get() . CreateWebSocket(FStatic::WSRemoteURL, FStatic::WSS, Header);
+	Socket -> OnConnected() . AddUObject(this, &UNetWork::OnConnected);
+	Socket -> OnConnectionError() . AddUObject(this, &UNetWork::OnConnectionError);
+	Socket -> OnMessage() . AddUObject(this, &UNetWork::OnMessage);
+	Socket -> OnMessageSent() . AddUObject(this, &UNetWork::OnMessageSent);
+	Socket -> OnClosed() . AddUObject(this, &UNetWork::OnClosed);
+	Socket -> Connect();
 }
 
 void UNetWork::OnConnected()
 {
-	
 }
 
 void UNetWork::OnConnectionError(const FString& Error)
 {
 	FLib::Echo(TEXT("连接网络失败！原因：" + Error));
+	FLib::Echo(TEXT("连接网络失败！原因：" + Error), false);
+	Socket -> Connect();
 }
 
 void UNetWork::OnMessage(const FString& Source)
 {
-	FLib::Echo(Source, true);
 	TSharedPtr<FJsonObject> Data;
 	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Source), Data)) {
 		FLib::Echo(TEXT("网络解析失败！"));
@@ -42,73 +50,39 @@ void UNetWork::OnMessage(const FString& Source)
 	const int Status = Data -> GetIntegerField(FStatic::Status);
 	const FString Message = Data -> GetStringField(FStatic::Message);
 	if (Status == FStatic::Hundred) {
-		FLib::Echo(Message);
 		return;
 	}
 	if (Status == FStatic::TwoHundredAndOne) {
-		FLib::Echo(TEXT("已连接网络！"));
+		this -> Pong();
 		return;
 	}
 	if (Status == FStatic::TwoHundredAndTwo) {
+		FLib::Echo(TEXT("收到服务器推送的同步消息：") + FDateTime::Now() . ToString());
 		const TSharedPtr<FJsonObject> Result = Data -> GetObjectField(FStatic::Result);
-		this -> FreshJoin(Result);
+		// this -> Sync(Result);
 		return;
 	}
 	if (Status == FStatic::TwoHundredAndThree) {
-		const TSharedPtr<FJsonObject> Result = Data -> GetObjectField(FStatic::Result);
-		this -> Move(Result);
+		const FString Result = Data -> GetStringField(FStatic::Result);
+		// this -> GuestQuit(Result);
 		return;
 	}
-	
 }
 
 void UNetWork::OnMessageSent(const FString& Source)
 {
-	
 }
 
 void UNetWork::OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
 {
-	FLib::Echo(TEXT("与服务器的连接关闭！"));
+	FLib::Echo(TEXT("与服务器的连接关闭！"), false);
+	Socket -> Close();
 }
 
-void UNetWork::Send(FString String)
+void UNetWork::Pong()
 {
-	FLib::Echo("send : " + String, true);
-	Socket -> Send(String);
 }
 
-void UNetWork::FreshJoin(const TSharedPtr<FJsonObject> Data)
+void UNetWork::GuestQuit(const FString NickName)
 {
-	const FVector Location = FVector(
-		Data -> GetNumberField(FStatic::LocationX),
-		Data -> GetNumberField(FStatic::LocationY),
-		Data -> GetNumberField(FStatic::LocationZ)
-	);
-	const FRotator Rotation = FRotator(
-		Data -> GetNumberField(FStatic::RotationPitch),
-		Data -> GetNumberField(FStatic::RotationYaw),
-		Data -> GetNumberField(FStatic::RotationRoll)
-	);
-	ACloneCharacter* Guest = World -> SpawnActor<ACloneCharacter>(Location, Rotation);
-	FString Name = FStatic::Guest + FStatic::Underline + Data -> GetStringField(FStatic::Name);
-	Guest -> SetActorLabel(Name);
-	Players . Emplace(Name, Guest);
-}
-
-void UNetWork::Move(const TSharedPtr<FJsonObject> Data)
-{
-	const FVector Location = FVector(
-		Data -> GetNumberField(FStatic::LocationX),
-		Data -> GetNumberField(FStatic::LocationY),
-		Data -> GetNumberField(FStatic::LocationZ)
-	);
-	const FRotator Rotation = FRotator(
-		Data -> GetNumberField(FStatic::RotationPitch),
-		Data -> GetNumberField(FStatic::RotationYaw),
-		Data -> GetNumberField(FStatic::RotationRoll)
-	);
-	const FString Name = FStatic::Guest + FStatic::Underline + Data -> GetStringField(FStatic::Name);
-	Players[Name] -> SetActorLocation(Location);
-	Players[Name] -> SetActorRotation(Rotation);
 }

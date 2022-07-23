@@ -3,11 +3,17 @@
 AFloor::AFloor()
 {
 	PrimaryActorTick . bCanEverTick = true;
+
 	HalfXY = FStatic::TwoHundred;
 	HalfZ = FStatic::Five;
 	XYZScale = FStatic::Fifty;
 	OverlapCount = FStatic::Zero;
 	AttachCount = FStatic::Zero;
+
+	bReplicates = true;
+	bNetLoadOnClient = true;
+	bAlwaysRelevant = true;
+	// NetCullDistanceSquared = 1000;
 
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::BoxComponent);
 	BoxComponent -> InitBoxExtent(FVector(FStatic::HundredAndNinety, FStatic::HundredAndNinety, FStatic::Five));
@@ -15,7 +21,8 @@ AFloor::AFloor()
 
 	RightNeedleBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::RightNeedle);
 	RightNeedleBoxComponent -> InitBoxExtent(FVector(FStatic::Five, FStatic::Five, FStatic::Sixty));
-	RightNeedleBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::HundredAndEighty, -FStatic::Hundred));
+	RightNeedleBoxComponent ->
+		SetRelativeLocation(FVector(FStatic::Zero, FStatic::HundredAndEighty, -FStatic::Hundred));
 	RightNeedleBoxComponent -> SetupAttachment(RootComponent);
 
 	LowNeedleBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::LowNeedle);
@@ -25,7 +32,8 @@ AFloor::AFloor()
 
 	LeftNeedleBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::LeftNeedle);
 	LeftNeedleBoxComponent -> InitBoxExtent(FVector(FStatic::Five, FStatic::Five, FStatic::Sixty));
-	LeftNeedleBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, -FStatic::HundredAndEighty, -FStatic::Hundred));
+	LeftNeedleBoxComponent ->
+		SetRelativeLocation(FVector(FStatic::Zero, -FStatic::HundredAndEighty, -FStatic::Hundred));
 	LeftNeedleBoxComponent -> SetupAttachment(RootComponent);
 
 	UpNeedleBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::UpNeedle);
@@ -55,17 +63,20 @@ AFloor::AFloor()
 
 	DownRightSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::DownWallRight);
 	DownRightSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::FiftyOne, FStatic::Two));
-	DownRightSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::HundredAndFiftyOne, -FStatic::Four));
+	DownRightSideBoxComponent -> SetRelativeLocation(
+		FVector(FStatic::Zero, FStatic::HundredAndFiftyOne, -FStatic::Four));
 	DownRightSideBoxComponent -> SetupAttachment(RootComponent);
 
 	DownLowSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::DownWallLow);
 	DownLowSideBoxComponent -> InitBoxExtent(FVector(FStatic::FiftyOne, FStatic::Hundred, FStatic::Two));
-	DownLowSideBoxComponent -> SetRelativeLocation(FVector(-FStatic::HundredAndFiftyOne, FStatic::Zero, -FStatic::Four));
+	DownLowSideBoxComponent ->
+		SetRelativeLocation(FVector(-FStatic::HundredAndFiftyOne, FStatic::Zero, -FStatic::Four));
 	DownLowSideBoxComponent -> SetupAttachment(RootComponent);
 
 	DownLeftSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::DownWallLeft);
 	DownLeftSideBoxComponent -> InitBoxExtent(FVector(FStatic::Hundred, FStatic::FiftyOne, FStatic::Two));
-	DownLeftSideBoxComponent -> SetRelativeLocation(FVector(FStatic::Zero, -FStatic::HundredAndFiftyOne, -FStatic::Four));
+	DownLeftSideBoxComponent -> SetRelativeLocation(
+		FVector(FStatic::Zero, -FStatic::HundredAndFiftyOne, -FStatic::Four));
 	DownLeftSideBoxComponent -> SetupAttachment(RootComponent);
 
 	DownUpSideBoxComponent = CreateDefaultSubobject<UBoxComponent>(*FStatic::DownWallUp);
@@ -79,41 +90,46 @@ AFloor::AFloor()
 	StaticMeshComponent -> SetStaticMesh(Foundation . Object);
 	StaticMeshComponent -> SetRelativeScale3D(FVector(HalfXY / XYZScale, HalfXY / XYZScale, HalfZ / XYZScale));
 	StaticMeshComponent -> SetRelativeLocation(FVector(FStatic::Zero, FStatic::Zero, -HalfZ));
+	StaticMeshComponent -> SetOnlyOwnerSee(true);
 }
 
 void AFloor::BeginPlay()
 {
 	Super::BeginPlay();
-	this -> SetMaterial(FStatic::BlurMaterial);
-	BoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::OnOverlapBegin);
-	BoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::OnOverlapEnd);
+	SetReplicateMovement(true);
+	Local = GetGameInstance() -> GetSubsystem<ULocal>();
+	Global = Global = GetWorld() -> GetGameState<AGlobal>();
+	SetMaterial(FStatic::BlurMaterial);
+	SetCollision(ECollisionEnabled::QueryOnly);
+	BoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::OnOverlapBegin);
+	BoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::OnOverlapEnd);
 
-	RightNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::RightNeedleOverlapBegin);
-	RightNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::RightNeedleOverlapEnd);
-	LowNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::LowNeedleOverlapBegin);
-	LowNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::LowNeedleOverlapEnd);
-	LeftNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::LeftNeedleOverlapBegin);
-	LeftNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::LeftNeedleOverlapEnd);
-	UpNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::UpNeedleOverlapBegin);
-	UpNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::UpNeedleOverlapEnd);
+	RightNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::RightNeedleOverlapBegin);
+	RightNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::RightNeedleOverlapEnd);
+	LowNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::LowNeedleOverlapBegin);
+	LowNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::LowNeedleOverlapEnd);
+	LeftNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::LeftNeedleOverlapBegin);
+	LeftNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::LeftNeedleOverlapEnd);
+	UpNeedleBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::UpNeedleOverlapBegin);
+	UpNeedleBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::UpNeedleOverlapEnd);
 
-	RightSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::RightOverlapBegin);
-	RightSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::RightOverlapEnd);
-	LowSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::LowOverlapBegin);
-	LowSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::LowOverlapEnd);
-	LeftSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::LeftOverlapBegin);
-	LeftSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::LeftOverlapEnd);
-	UpSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::UpOverlapBegin);
-	UpSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::UpOverlapEnd);
+	RightSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::RightOverlapBegin);
+	RightSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::RightOverlapEnd);
+	LowSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::LowOverlapBegin);
+	LowSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::LowOverlapEnd);
+	LeftSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::LeftOverlapBegin);
+	LeftSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::LeftOverlapEnd);
+	UpSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::UpOverlapBegin);
+	UpSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::UpOverlapEnd);
 
-	DownRightSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::DownRightOverlapBegin);
-	DownRightSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::DownRightOverlapEnd);
-	DownLowSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::DownLowOverlapBegin);
-	DownLowSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::DownLowOverlapEnd);
-	DownLeftSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::DownLeftOverlapBegin);
-	DownLeftSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::DownLeftOverlapEnd);
-	DownUpSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &AFloor::DownUpOverlapBegin);
-	DownUpSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &AFloor::DownUpOverlapEnd);
+	DownRightSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::DownRightOverlapBegin);
+	DownRightSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::DownRightOverlapEnd);
+	DownLowSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::DownLowOverlapBegin);
+	DownLowSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::DownLowOverlapEnd);
+	DownLeftSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::DownLeftOverlapBegin);
+	DownLeftSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::DownLeftOverlapEnd);
+	DownUpSideBoxComponent -> OnComponentBeginOverlap . AddDynamic(this, &ThisClass::DownUpOverlapBegin);
+	DownUpSideBoxComponent -> OnComponentEndOverlap . AddDynamic(this, &ThisClass::DownUpOverlapEnd);
 }
 
 void AFloor::Tick(float DeltaTime)
@@ -125,7 +141,36 @@ void AFloor::Tick(float DeltaTime)
 		this -> LowDetectRay();
 		this -> LeftDetectRay();
 		this -> UpDetectRay();
+		if (GetNetMode() == NM_DedicatedServer || GetOwner() -> GetLocalRole() != ROLE_AutonomousProxy) {
+			return;
+		}
+		this -> RangeDetectRay();
+	} else {
+		PrimaryActorTick . SetTickFunctionEnable(false);
+		SetCollision(ECollisionEnabled::QueryAndPhysics);
+		SetMaterial(FStatic::WoodMaterial);
+		Tags . Emplace(Key);
+		StaticMeshComponent -> SetOnlyOwnerSee(false);
+		StaticMeshComponent -> SetMobility(EComponentMobility::Stationary);
+		StaticMeshComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		BoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		RightSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		LowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		LeftSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		UpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		DownRightSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		DownLowSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		DownLeftSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
+		DownUpSideBoxComponent -> SetCollisionObjectType(ECC_WorldStatic);
 	}
+}
+
+void AFloor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass, Key);
+	DOREPLIFETIME(ThisClass, IsSet);
+	DOREPLIFETIME(ThisClass, EnemyRange);
 }
 
 void AFloor::SetCollision(const ECollisionEnabled::Type Type) const
@@ -172,18 +217,24 @@ void AFloor::RightNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, 
                                      class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                      const FHitResult& SweepResult)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Save(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Save(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
 void AFloor::RightNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                    class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Remove(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Remove(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
@@ -191,18 +242,24 @@ void AFloor::LowNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, cl
                                    class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                    const FHitResult& SweepResult)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Save(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Save(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
 void AFloor::LowNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Remove(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Remove(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
@@ -210,18 +267,24 @@ void AFloor::LeftNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, c
                                     class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                     const FHitResult& SweepResult)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Save(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Save(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
 void AFloor::LeftNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Remove(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Remove(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
@@ -229,18 +292,24 @@ void AFloor::UpNeedleOverlapBegin(class UPrimitiveComponent* OverlappedComp, cla
                                   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                   const FHitResult& SweepResult)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Save(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Save(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
 void AFloor::UpNeedleOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
                                 class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (FStr::IsContain(OtherComp -> GetName(), FStatic::Front) || FStr::IsContain(
-		OtherComp -> GetName(), FStatic::Back)) {
-		Remove(OtherActor -> GetName(), OtherComp -> GetName());
+	const FString CompName = OtherComp -> GetName();
+	if (FStr::IsContain(CompName, FStatic::Front) || FStr::IsContain(CompName, FStatic::Back)) {
+		if (!OtherActor -> Tags . Num()) {
+			return;
+		}
+		Remove(OtherActor -> Tags[FStatic::Zero] . ToString(), CompName, true);
 	}
 }
 
@@ -321,8 +390,8 @@ void AFloor::UpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActo
 }
 
 void AFloor::DownRightOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                               class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-                               const FHitResult& SweepResult)
+                                   class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                   const FHitResult& SweepResult)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -331,7 +400,7 @@ void AFloor::DownRightOverlapBegin(class UPrimitiveComponent* OverlappedComp, cl
 }
 
 void AFloor::DownRightOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                             class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+                                 class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -340,8 +409,8 @@ void AFloor::DownRightOverlapEnd(class UPrimitiveComponent* OverlappedComp, clas
 }
 
 void AFloor::DownLowOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                             class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-                             const FHitResult& SweepResult)
+                                 class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                 const FHitResult& SweepResult)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -350,7 +419,7 @@ void AFloor::DownLowOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
 }
 
 void AFloor::DownLowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                           class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+                               class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -359,8 +428,8 @@ void AFloor::DownLowOverlapEnd(class UPrimitiveComponent* OverlappedComp, class 
 }
 
 void AFloor::DownLeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                              class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-                              const FHitResult& SweepResult)
+                                  class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                  const FHitResult& SweepResult)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -369,7 +438,7 @@ void AFloor::DownLeftOverlapBegin(class UPrimitiveComponent* OverlappedComp, cla
 }
 
 void AFloor::DownLeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                            class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+                                class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -378,8 +447,8 @@ void AFloor::DownLeftOverlapEnd(class UPrimitiveComponent* OverlappedComp, class
 }
 
 void AFloor::DownUpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                            class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-                            const FHitResult& SweepResult)
+                                class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                const FHitResult& SweepResult)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -388,7 +457,7 @@ void AFloor::DownUpOverlapBegin(class UPrimitiveComponent* OverlappedComp, class
 }
 
 void AFloor::DownUpOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-                          class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+                              class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (FStr::IsContain(OtherActor -> GetName(), FStatic::Wall) &&
 		FStr::IsContain(OtherComp -> GetName(), FStatic::Up)) {
@@ -414,7 +483,9 @@ void AFloor::RightDetectRay()
 		if (FStr::IsContain(Name, FStatic::Wall) && CompName == FStatic::Up) {
 			return;
 		}
+		Name = Hit . GetActor() -> Tags[FStatic::Zero] . ToString();
 		if (Save(Name, CompName)) {
+			IsAttach = true;
 			RightDetectName = Name;
 			RightDetectCompName = CompName;
 			Right = true;
@@ -423,6 +494,7 @@ void AFloor::RightDetectRay()
 	}
 	if (!RightDetectName . IsEmpty()) {
 		if (Remove(RightDetectName, RightDetectCompName)) {
+			IsAttach = false;
 			RightDetectName = nullptr;
 			RightDetectCompName = nullptr;
 			Right = false;
@@ -449,7 +521,9 @@ void AFloor::LowDetectRay()
 		if (FStr::IsContain(Name, FStatic::Wall) && CompName == FStatic::Up) {
 			return;
 		}
+		Name = Hit . GetActor() -> Tags[FStatic::Zero] . ToString();
 		if (Save(Name, CompName)) {
+			IsAttach = true;
 			LowDetectName = Name;
 			LowDetectCompName = CompName;
 			Low = true;
@@ -458,6 +532,7 @@ void AFloor::LowDetectRay()
 	}
 	if (!LowDetectName . IsEmpty()) {
 		if (Remove(LowDetectName, LowDetectCompName)) {
+			IsAttach = false;
 			LowDetectName = nullptr;
 			LowDetectCompName = nullptr;
 			Low = false;
@@ -483,7 +558,9 @@ void AFloor::LeftDetectRay()
 		if (FStr::IsContain(Name, FStatic::Wall) && CompName == FStatic::Up) {
 			return;
 		}
+		Name = Hit . GetActor() -> Tags[FStatic::Zero] . ToString();
 		if (Save(Name, CompName)) {
+			IsAttach = true;
 			LeftDetectName = Name;
 			LeftDetectCompName = CompName;
 			Left = true;
@@ -492,6 +569,7 @@ void AFloor::LeftDetectRay()
 	}
 	if (!LeftDetectName . IsEmpty()) {
 		if (Remove(LeftDetectName, LeftDetectCompName)) {
+			IsAttach = false;
 			LeftDetectName = nullptr;
 			LeftDetectCompName = nullptr;
 			Left = false;
@@ -518,7 +596,9 @@ void AFloor::UpDetectRay()
 		if (FStr::IsContain(Name, FStatic::Wall) && CompName == FStatic::Up) {
 			return;
 		}
+		Name = Hit . GetActor() -> Tags[FStatic::Zero] . ToString();
 		if (Save(Name, CompName)) {
+			IsAttach = true;
 			UpDetectName = Name;
 			UpDetectCompName = CompName;
 			Up = true;
@@ -527,6 +607,7 @@ void AFloor::UpDetectRay()
 	}
 	if (!UpDetectName . IsEmpty()) {
 		if (Remove(UpDetectName, UpDetectCompName)) {
+			IsAttach = false;
 			UpDetectName = nullptr;
 			UpDetectCompName = nullptr;
 			Up = false;
@@ -534,10 +615,12 @@ void AFloor::UpDetectRay()
 	}
 }
 
-bool AFloor::Save(FString Name, FString CompName)
+bool AFloor::Save(FString Name, FString CompName, bool IsNeedle)
 {
-	AttachCount += FStatic::One;
-	IsAttach = true;
+	if (IsNeedle) {
+		AttachCount += FStatic::One;
+		IsAttach = true;
+	}
 	FBlockActor BlockActor;
 	if (!BlockSideCache . Contains(Name)) {
 		BlockSideCache . Emplace(Name, FStr::SetSide(CompName, BlockActor));
@@ -548,11 +631,13 @@ bool AFloor::Save(FString Name, FString CompName)
 	return true;
 }
 
-bool AFloor::Remove(FString Name, FString CompName)
+bool AFloor::Remove(FString Name, FString CompName, bool IsNeedle)
 {
-	AttachCount -= FStatic::One;
-	if (AttachCount <= FStatic::Zero) {
-		IsAttach = false;
+	if (IsNeedle) {
+		AttachCount -= FStatic::One;
+		if (AttachCount <= FStatic::Zero) {
+			IsAttach = false;
+		}
 	}
 	if (!BlockSideCache . Contains(Name)) {
 		return true;
@@ -611,4 +696,48 @@ float AFloor::RayMax(bool IsUp)
 		}
 	}
 	return CenterZ;
+}
+
+void AFloor::RangeDetectRay()
+{
+	if (!Local -> UID || GetNetMode() == NM_DedicatedServer) {
+		return;
+	}
+	FHitResult Center;
+	FVector CenterStart = GetActorLocation();
+	FCollisionQueryParams Params;
+	Params . AddIgnoredActor(this);
+	Params . bTraceComplex = false;
+	bool bIsHit = GetWorld() -> LineTraceSingleByProfile(
+		Center, CenterStart,
+		-GetActorUpVector() * FStatic::Hundred + CenterStart,
+		*(FStatic::Foundation + FStatic::Range), Params
+	);
+	if (!bIsHit) {
+		EnemyRange = false;
+		return;
+	}
+	if (!FStr::IsContain(Center . GetComponent() -> GetName(), FStatic::Range)) {
+		EnemyRange = false;
+		return;
+	}
+	if (!Center . GetActor() -> Tags . Num()) {
+		EnemyRange = false;
+		return;
+	}
+	FString Index = Center . GetActor() -> Tags[FStatic::Zero] . ToString();
+	JudgeEnemyRange(Index, Local -> CID, Local -> UID);
+}
+
+void AFloor::JudgeEnemyRange_Implementation(const FString& Index, int CID, int UID)
+{
+	if (Global -> Buildings[Index] . CID != CID && CID != FStatic::Zero) {
+		EnemyRange = true;
+		return;
+	}
+	if (Global -> Buildings[Index] . CID == FStatic::Zero && Global -> Buildings[Index] . UID != UID) {
+		EnemyRange = true;
+		return;
+	}
+	EnemyRange = false;
 }

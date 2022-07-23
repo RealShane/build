@@ -6,14 +6,17 @@
 ```
  B站：https://www.bilibili.com/video/BV17Q4y1Y7fr/
 ```
-# 目前的进度
+# 关于这个项目
 ```
-* 建造系统：地基、墙、天花板
-    生成建筑（虚影blur）
-    附着建筑
-    固定建筑
-* 通信：WebSocket（Swoole）、HTTP
-    Swoole：使用docker本地启动，详见PhpForUe项目的ReadMe--docker exec -it ue-php-fpm-1 php think swoole rego
-    HTTP：调用send方法传递URL，域名在FStatic中自己绑定
-    注：服务与本项目的服务端代码，只共享给部分人。
+* 这是一个分享我视频代码的项目
+* 本项目使用了虚幻源码版，如果你没有使用源码版，请使用.uproject切换引擎版本，但请注意，本项目中含有rpc函数，使用二进制版本无法打包dedicated server
+* 下载后，请自行往content里加入初学者内容包
+```
+# 如果你想要一起协作这个项目
+```
+* 一定不要往master里去合并你自己的代码，master 我会不定期上传
+* 新建一个自己的分支名来保存你的代码
+* 如果你看到了他人的分支有些有趣的东西，并且你想要在这个基础上进行修改，也请不要随意合并他人的代码，从他的基础上切一个你自己的分支
+* 如果你真的想要往他人或者master里合并你的代码，也请在群里联系那个人（master请联系我），得到他人的同意后再合并你的代码
+* 最后：请不要修改这个Read Me！！！！！！
 ```
